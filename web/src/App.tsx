@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Compass, 
+import type { Session } from '@supabase/supabase-js';
+import {
+  Compass,
   Plus
 } from 'lucide-react';
 import type { VideoItem, MoodType, Platform, SoundscapeType } from './types';
-import { 
-  getSavedVideos, 
-  addVideo, 
-  removeVideo, 
-  toggleLiked, 
-  toggleWatchLater, 
-  saveVideosToStorage 
+import {
+  getSavedVideos,
+  addVideo,
+  removeVideo,
+  toggleLiked,
+  toggleWatchLater,
+  saveVideosToStorage
 } from './lib/storage';
 import { Navbar } from './components/Navbar';
 import { VideoCard } from './components/VideoCard';
@@ -23,7 +24,9 @@ import { ExtensionBridgeBanner } from './components/ExtensionBridgeBanner';
 import { FluidCanvas } from './components/FluidCanvas';
 import { HeroSanctuary } from './components/HeroSanctuary';
 import { zenAudio } from './lib/audioSynthesizer';
-import { getStoredUserProfile } from './lib/googleAuth';
+import { toGoogleProfile, PENDING_YT_SYNC_KEY } from './lib/googleAuth';
+import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
+import { pullCloudVideos, pushVideo, pushVideos, deleteCloudVideo } from './lib/cloudSync';
 import confetti from 'canvas-confetti';
 
 export const App: React.FC = () => {
@@ -39,18 +42,78 @@ export const App: React.FC = () => {
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isYTSyncOpen, setIsYTSyncOpen] = useState(false);
-  const [googleUser, setGoogleUser] = useState(() => {
-    try {
-      const raw = sessionStorage.getItem('zenvault_google_user_profile');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  });
+
+  // Google/Supabase auth session - the single source of truth for sign-in state
+  const [session, setSession] = useState<Session | null>(null);
+  const [autoSyncPending, setAutoSyncPending] = useState(false);
+  const googleUser = useMemo(() => toGoogleProfile(session?.user ?? null), [session]);
+  const userId = session?.user?.id;
 
   // Chrome Extension Bridge State
   const [extensionLinked, setExtensionLinked] = useState(false);
   const [queuedExtensionVideos, setQueuedExtensionVideos] = useState<VideoItem[]>([]);
+
+  // Bootstrap the Supabase session and detect the OAuth redirect coming back.
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    const checkPendingSync = (activeSession: Session | null) => {
+      if (activeSession && localStorage.getItem(PENDING_YT_SYNC_KEY)) {
+        setIsYTSyncOpen(true);
+        setAutoSyncPending(true);
+      }
+    };
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      checkPendingSync(data.session);
+    });
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+      checkPendingSync(newSession);
+    });
+
+    return () => subscription.subscription.unsubscribe();
+  }, []);
+
+  // On login, merge the cloud library with whatever's local, then push
+  // anything that only existed locally up to the cloud so it follows the
+  // account to other devices too.
+  useEffect(() => {
+    if (!userId) return;
+
+    (async () => {
+      try {
+        const cloudVideos = await pullCloudVideos(userId);
+        setVideos((prevLocal) => {
+          const byUrl = new Map<string, VideoItem>();
+          for (const v of cloudVideos) byUrl.set(v.url, v);
+
+          const localOnly: VideoItem[] = [];
+          for (const v of prevLocal) {
+            if (!byUrl.has(v.url)) {
+              byUrl.set(v.url, v);
+              localOnly.push(v);
+            }
+          }
+
+          const merged = Array.from(byUrl.values()).sort(
+            (a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime()
+          );
+          saveVideosToStorage(merged);
+
+          if (localOnly.length > 0) {
+            pushVideos(userId, localOnly).catch((err) => console.warn('Cloud sync push failed:', err));
+          }
+
+          return merged;
+        });
+      } catch (err) {
+        console.warn('Cloud sync pull failed:', err);
+      }
+    })();
+  }, [userId]);
 
   // 1. Connect to Chrome Extension Bridge via postMessage
   useEffect(() => {
@@ -91,23 +154,25 @@ export const App: React.FC = () => {
   const handleAddVideo = (video: VideoItem) => {
     const updated = addVideo(video);
     setVideos(updated);
+    if (userId) pushVideo(userId, video).catch((err) => console.warn('Cloud sync failed:', err));
   };
 
   const handleBulkAdd = (newVideos: VideoItem[]) => {
-    let current = [...videos];
-    for (const v of newVideos) {
-      if (!current.some(existing => existing.url === v.url)) {
-        current = [v, ...current];
-      }
-    }
+    const existingUrls = new Set(videos.map(v => v.url));
+    const added = newVideos.filter(v => !existingUrls.has(v.url));
+    const current = [...added, ...videos];
     saveVideosToStorage(current);
     setVideos(current);
+    if (userId && added.length > 0) {
+      pushVideos(userId, added).catch((err) => console.warn('Cloud sync failed:', err));
+    }
   };
 
   const handleDelete = (id: string) => {
     const updated = removeVideo(id);
     setVideos(updated);
     if (activeVideo?.id === id) setActiveVideo(null);
+    if (userId) deleteCloudVideo(userId, id).catch((err) => console.warn('Cloud sync failed:', err));
   };
 
   const handleToggleLike = (id: string) => {
@@ -116,6 +181,10 @@ export const App: React.FC = () => {
     if (activeVideo?.id === id) {
       setActiveVideo(prev => prev ? { ...prev, isLiked: !prev.isLiked } : null);
     }
+    if (userId) {
+      const changed = updated.find(v => v.id === id);
+      if (changed) pushVideo(userId, changed).catch((err) => console.warn('Cloud sync failed:', err));
+    }
   };
 
   const handleToggleWatchLater = (id: string) => {
@@ -123,6 +192,10 @@ export const App: React.FC = () => {
     setVideos(updated);
     if (activeVideo?.id === id) {
       setActiveVideo(prev => prev ? { ...prev, isWatchLater: !prev.isWatchLater } : null);
+    }
+    if (userId) {
+      const changed = updated.find(v => v.id === id);
+      if (changed) pushVideo(userId, changed).catch((err) => console.warn('Cloud sync failed:', err));
     }
   };
 
@@ -135,30 +208,32 @@ export const App: React.FC = () => {
     window.postMessage({ type: 'ZENVAULT_CLEAR_EXTENSION_STORAGE' }, '*');
   };
 
-  // Filtered List
+  // Filtered List - most recently added/liked always shown first
   const filteredVideos = useMemo(() => {
-    return videos.filter(v => {
-      // Filter tab
-      if (activeFilter === 'liked' && !v.isLiked) return false;
-      if (activeFilter === 'watch-later' && !v.isWatchLater) return false;
+    return videos
+      .filter(v => {
+        // Filter tab
+        if (activeFilter === 'liked' && !v.isLiked) return false;
+        if (activeFilter === 'watch-later' && !v.isWatchLater) return false;
 
-      // Mood
-      if (selectedMood !== 'all' && v.mood !== selectedMood) return false;
+        // Mood
+        if (selectedMood !== 'all' && v.mood !== selectedMood) return false;
 
-      // Platform
-      if (selectedPlatform !== 'all' && v.platform !== selectedPlatform) return false;
+        // Platform
+        if (selectedPlatform !== 'all' && v.platform !== selectedPlatform) return false;
 
-      // Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesTitle = v.title.toLowerCase().includes(q);
-        const matchesChannel = v.channel?.toLowerCase().includes(q);
-        const matchesNotes = v.notes?.toLowerCase().includes(q);
-        if (!matchesTitle && !matchesChannel && !matchesNotes) return false;
-      }
+        // Search Query
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const matchesTitle = v.title.toLowerCase().includes(q);
+          const matchesChannel = v.channel?.toLowerCase().includes(q);
+          const matchesNotes = v.notes?.toLowerCase().includes(q);
+          if (!matchesTitle && !matchesChannel && !matchesNotes) return false;
+        }
 
-      return true;
-    });
+        return true;
+      })
+      .sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
   }, [videos, activeFilter, selectedMood, selectedPlatform, searchQuery]);
 
   // Playlist Navigation in Cinema Mode
@@ -344,12 +419,16 @@ export const App: React.FC = () => {
         isOpen={isYTSyncOpen}
         onClose={() => {
           setIsYTSyncOpen(false);
-          setGoogleUser(getStoredUserProfile());
+          setAutoSyncPending(false);
+          localStorage.removeItem(PENDING_YT_SYNC_KEY);
         }}
-        onSyncComplete={(newVideos) => {
-          handleBulkAdd(newVideos);
-          setGoogleUser(getStoredUserProfile());
+        session={session}
+        autoSyncOnOpen={autoSyncPending}
+        onAutoSyncHandled={() => {
+          setAutoSyncPending(false);
+          localStorage.removeItem(PENDING_YT_SYNC_KEY);
         }}
+        onSyncComplete={handleBulkAdd}
       />
 
     </div>

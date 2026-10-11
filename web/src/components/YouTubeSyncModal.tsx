@@ -1,126 +1,118 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  X, 
-  Sparkles, 
-  AlertCircle, 
-  HelpCircle, 
-  LogOut, 
-  Check, 
-  Settings, 
-  Heart, 
-  ListMusic, 
+import type { Session } from '@supabase/supabase-js';
+import {
+  X,
+  Sparkles,
+  AlertCircle,
+  LogOut,
+  Check,
+  Heart,
+  ListMusic,
   ChevronRight,
   ShieldCheck,
-  Edit2
+  RefreshCw
 } from 'lucide-react';
 import { YoutubeIcon, GoogleIcon } from './Icons';
 import confetti from 'canvas-confetti';
 import type { VideoItem } from '../types';
-import { 
-  getStoredGoogleClientId, 
-  setStoredGoogleClientId, 
-  getStoredAccessToken, 
-  getStoredUserProfile, 
-  clearGoogleSession, 
-  requestGoogleLogin, 
-  fetchGoogleProfile, 
-  fetchGoogleLikedVideos, 
-  fetchGoogleUserPlaylists, 
+import {
+  toGoogleProfile,
+  signInWithGoogle,
+  signOutGoogle,
+  fetchGoogleLikedVideos,
+  fetchGoogleUserPlaylists,
   fetchGooglePlaylistVideos,
-  type GoogleUserProfile,
+  PENDING_YT_SYNC_KEY,
   type YouTubePlaylistMeta
 } from '../lib/googleAuth';
+import { isSupabaseConfigured } from '../lib/supabaseClient';
 import { zenAudio } from '../lib/audioSynthesizer';
 
 interface YouTubeSyncModalProps {
   isOpen: boolean;
   onClose: () => void;
+  session: Session | null;
+  autoSyncOnOpen: boolean;
+  onAutoSyncHandled: () => void;
   onSyncComplete: (videos: VideoItem[]) => void;
 }
 
 export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
   isOpen,
   onClose,
+  session,
+  autoSyncOnOpen,
+  onAutoSyncHandled,
   onSyncComplete
 }) => {
-  const [clientId, setClientId] = useState(() => getStoredGoogleClientId());
-  const [isEditingClientId, setIsEditingClientId] = useState(false);
-  const [accessToken, setAccessToken] = useState<string | null>(() => getStoredAccessToken());
-  const [userProfile, setUserProfile] = useState<GoogleUserProfile | null>(() => getStoredUserProfile());
+  const userProfile = toGoogleProfile(session?.user);
+  const providerToken = session?.provider_token ?? null;
+
   const [playlists, setPlaylists] = useState<YouTubePlaylistMeta[]>([]);
-  
   const [isLoading, setIsLoading] = useState(false);
   const [syncingPlaylistId, setSyncingPlaylistId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // If token is already present on open, load profile and playlists
+  // Load the user's playlists once we have a usable token.
   useEffect(() => {
-    if (isOpen && accessToken && !userProfile) {
-      loadProfileAndPlaylists(accessToken);
+    if (isOpen && providerToken && playlists.length === 0) {
+      loadPlaylists(providerToken);
     }
-  }, [isOpen, accessToken]);
+  }, [isOpen, providerToken]);
+
+  // Clear stale playlists once the Google access token is gone (sign-out or expiry).
+  useEffect(() => {
+    if (!providerToken) setPlaylists([]);
+  }, [providerToken]);
+
+  // After an OAuth redirect brings the user back signed-in, auto-run the
+  // Liked Videos sync immediately — login should produce a synced library
+  // without a second click.
+  useEffect(() => {
+    if (isOpen && autoSyncOnOpen && providerToken) {
+      handleSyncLikedVideos(providerToken).finally(() => onAutoSyncHandled());
+    }
+  }, [isOpen, autoSyncOnOpen, providerToken]);
 
   if (!isOpen) return null;
 
-  async function loadProfileAndPlaylists(token: string) {
+  async function loadPlaylists(token: string) {
     setIsLoading(true);
     setError(null);
     try {
-      const profile = await fetchGoogleProfile(token);
-      setUserProfile(profile);
-
       const userPlaylists = await fetchGoogleUserPlaylists(token);
       setPlaylists(userPlaylists);
     } catch (err: any) {
-      console.warn('Could not load profile or playlists:', err);
-      clearGoogleSession();
-      setAccessToken(null);
-      setUserProfile(null);
+      console.warn('Could not load YouTube playlists:', err);
+      setError('Your Google access has expired. Sign in again to keep syncing.');
     } finally {
       setIsLoading(false);
     }
   }
 
-  // Handle Sign In with Google
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setError(null);
     setSuccessMsg(null);
-
-    const activeClientId = clientId.trim();
-    if (!activeClientId) {
-      setIsEditingClientId(true);
-      setError('Please provide your Google OAuth 2.0 Client ID to connect.');
-      return;
-    }
-
-    setStoredGoogleClientId(activeClientId);
     setIsLoading(true);
-
-    requestGoogleLogin(
-      activeClientId,
-      async (token) => {
-        setAccessToken(token);
-        zenAudio.playHapticClick(880, 0.08);
-        await loadProfileAndPlaylists(token);
-        setIsLoading(false);
-      },
-      (err) => {
-        setIsLoading(false);
-        setError(err.message || 'Google Sign-in was cancelled or failed.');
-      }
-    );
+    localStorage.setItem(PENDING_YT_SYNC_KEY, '1');
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      localStorage.removeItem(PENDING_YT_SYNC_KEY);
+      setIsLoading(false);
+      setError(err.message || 'Google sign-in failed to start.');
+    }
   };
 
   // Sync Liked Videos
-  const handleSyncLikedVideos = async () => {
-    if (!accessToken) return;
+  async function handleSyncLikedVideos(token: string) {
     setSyncingPlaylistId('LL');
     setError(null);
     setSuccessMsg(null);
 
     try {
-      const videos = await fetchGoogleLikedVideos(accessToken);
+      const videos = await fetchGoogleLikedVideos(token);
       if (videos.length === 0) {
         setError('No Liked Videos found in your YouTube account.');
         return;
@@ -134,17 +126,17 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
     } finally {
       setSyncingPlaylistId(null);
     }
-  };
+  }
 
   // Sync specific playlist
   const handleSyncPlaylist = async (playlist: YouTubePlaylistMeta) => {
-    if (!accessToken) return;
+    if (!providerToken) return;
     setSyncingPlaylistId(playlist.id);
     setError(null);
     setSuccessMsg(null);
 
     try {
-      const videos = await fetchGooglePlaylistVideos(accessToken, playlist.id);
+      const videos = await fetchGooglePlaylistVideos(providerToken, playlist.id);
       if (videos.length === 0) {
         setError(`No videos found in playlist "${playlist.title}".`);
         return;
@@ -160,10 +152,8 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
     }
   };
 
-  const handleSignOut = () => {
-    clearGoogleSession();
-    setAccessToken(null);
-    setUserProfile(null);
+  const handleSignOut = async () => {
+    await signOutGoogle();
     setPlaylists([]);
     setSuccessMsg(null);
     zenAudio.playHapticClick(450, 0.04);
@@ -206,7 +196,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xl p-4 animate-in fade-in">
       <div className="relative w-full max-w-xl max-h-[92vh] flex flex-col liquid-crystal-panel overflow-hidden border border-white/15 shadow-[0_25px_60px_rgba(0,0,0,0.8)]">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#07090e]/70">
           <div className="flex items-center gap-3">
@@ -224,7 +214,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
               <p className="text-[11px] text-slate-400">Directly connect your Google account to sync Liked & saved videos</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => { zenAudio.playHapticClick(); onClose(); }}
@@ -237,7 +227,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
 
         {/* Modal Scrollable Body */}
         <div className="p-6 overflow-y-auto flex flex-col gap-5">
-          
+
           {/* Feedback messages */}
           {error && (
             <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
@@ -253,8 +243,18 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
             </div>
           )}
 
-          {/* Section: Google Account State */}
-          {userProfile && accessToken ? (
+          {!isSupabaseConfigured ? (
+            /* Dev hasn't wired up Supabase yet */
+            <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex flex-col gap-2">
+              <div className="font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Supabase isn't configured yet
+              </div>
+              <p className="text-amber-200/80">
+                Set <code className="bg-black/30 px-1 rounded">VITE_SUPABASE_URL</code> and <code className="bg-black/30 px-1 rounded">VITE_SUPABASE_ANON_KEY</code> in <code className="bg-black/30 px-1 rounded">web/.env</code>, and enable the Google provider in your Supabase project's Authentication settings.
+              </p>
+            </div>
+          ) : userProfile && providerToken ? (
             /* Logged in state card */
             <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-950/60 border border-indigo-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -289,6 +289,27 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                 <span>Disconnect</span>
               </button>
             </div>
+          ) : userProfile && !providerToken ? (
+            /* Signed in to Supabase, but Google access expired - needs re-consent */
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 flex flex-col items-center text-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <RefreshCw className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Reconnect Google Access</h3>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                  You're signed in as {userProfile.email}, but your YouTube access has expired. Sign in again to keep syncing.
+                </p>
+              </div>
+              <button
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                className="tactile-btn w-full sm:w-auto min-w-[240px] px-6 py-3 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+              >
+                <GoogleIcon className="w-4 h-4" />
+                <span>Reconnect with Google</span>
+              </button>
+            </div>
           ) : (
             /* Not logged in state -> Direct Sign In Card */
             <div className="p-5 rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.01] border border-white/10 flex flex-col items-center text-center gap-4">
@@ -298,96 +319,32 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
               <div>
                 <h3 className="text-base font-bold text-white">Direct Google Account Sign-In</h3>
                 <p className="text-xs text-slate-400 mt-1 max-w-sm">
-                  Sign in to your Google Account to stream your YouTube Liked videos and custom playlists into your quiet sanctuary.
+                  Sign in to your Google Account to stream your YouTube Liked videos and custom playlists into your quiet sanctuary — and keep them synced across every device you sign into.
                 </p>
               </div>
 
-              {/* If Client ID is configured, show 1-click Sign In */}
-              {clientId.trim() && !isEditingClientId ? (
-                <div className="flex flex-col items-center gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={handleGoogleSignIn}
-                    disabled={isLoading}
-                    className="tactile-btn w-full sm:w-auto min-w-[240px] px-6 py-3 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-3 transition-all disabled:opacity-50"
-                  >
-                    {isLoading ? (
-                      <>
-                        <span className="animate-spin text-base">⏳</span>
-                        <span>Connecting with Google...</span>
-                      </>
-                    ) : (
-                      <>
-                        <GoogleIcon className="w-4 h-4" />
-                        <span>Sign in with Google</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => setIsEditingClientId(true)}
-                    className="text-[11px] text-slate-400 hover:text-indigo-300 flex items-center gap-1 mt-1"
-                  >
-                    <Edit2 className="w-3 h-3" />
-                    <span>Change OAuth Client ID</span>
-                  </button>
-                </div>
-              ) : (
-                /* Client ID Input Box */
-                <div className="w-full flex flex-col gap-3 text-left bg-black/40 p-4 rounded-xl border border-indigo-500/30">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-mono uppercase text-indigo-300 font-bold flex items-center gap-1.5">
-                      <Settings className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Google OAuth 2.0 Client ID</span>
-                    </span>
-                    <a
-                      href="https://console.cloud.google.com/apis/credentials"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-indigo-400 hover:text-indigo-300 text-[11px] flex items-center gap-1"
-                    >
-                      <HelpCircle className="w-3 h-3" />
-                      <span>Get free Client ID</span>
-                    </a>
-                  </div>
-
-                  <input
-                    type="text"
-                    value={clientId}
-                    onChange={(e) => setClientId(e.target.value)}
-                    placeholder="e.g. 1234567890-abcdef.apps.googleusercontent.com"
-                    className="w-full px-3 py-2.5 rounded-lg bg-black/60 border border-white/10 text-white placeholder-slate-600 text-xs font-mono focus:outline-none focus:border-indigo-500/60"
-                  />
-
-                  <div className="text-[11px] text-slate-400 bg-white/[0.02] p-3 rounded-lg border border-white/5 space-y-1">
-                    <div className="font-semibold text-slate-200">Quick 1-Minute Setup:</div>
-                    <div>1. Go to <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" className="text-indigo-400 underline">Google Cloud Console</a> & create a free project.</div>
-                    <div>2. Enable <strong>YouTube Data API v3</strong>.</div>
-                    <div>3. Go to <strong>Credentials → Create Credentials → OAuth Client ID (Web Application)</strong>.</div>
-                    <div>4. In <strong>Authorized JavaScript origins</strong>, add: <code className="bg-white/10 px-1 py-0.5 rounded text-white font-mono">http://localhost:5173</code></div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      if (clientId.trim()) {
-                        setStoredGoogleClientId(clientId);
-                        setIsEditingClientId(false);
-                        handleGoogleSignIn();
-                      } else {
-                        setError('Please paste your Google OAuth Client ID.');
-                      }
-                    }}
-                    className="tactile-btn w-full py-2.5 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold uppercase tracking-wider shadow-md transition-all flex items-center justify-center gap-2"
-                  >
+              <button
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                className="tactile-btn w-full sm:w-auto min-w-[240px] px-6 py-3 rounded-xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs uppercase tracking-wider shadow-[0_4px_20px_rgba(255,255,255,0.2)] flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="animate-spin text-base">⏳</span>
+                    <span>Connecting with Google...</span>
+                  </>
+                ) : (
+                  <>
                     <GoogleIcon className="w-4 h-4" />
-                    <span>Save & Sign in with Google</span>
-                  </button>
-                </div>
-              )}
+                    <span>Sign in with Google</span>
+                  </>
+                )}
+              </button>
             </div>
           )}
 
           {/* Sync Actions (Available when connected) */}
-          {userProfile && accessToken && (
+          {userProfile && providerToken && (
             <div className="flex flex-col gap-3">
               <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-bold">
                 AVAILABLE VAULT SYNCS
@@ -406,7 +363,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                 </div>
 
                 <button
-                  onClick={handleSyncLikedVideos}
+                  onClick={() => handleSyncLikedVideos(providerToken)}
                   disabled={syncingPlaylistId === 'LL'}
                   className="tactile-btn px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-md transition-all disabled:opacity-50"
                 >

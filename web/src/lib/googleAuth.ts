@@ -1,4 +1,6 @@
+import type { User } from '@supabase/supabase-js';
 import type { VideoItem } from '../types';
+import { supabase } from './supabaseClient';
 
 export interface GoogleUserProfile {
   name: string;
@@ -13,186 +15,113 @@ export interface YouTubePlaylistMeta {
   thumbnail?: string;
 }
 
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        oauth2: {
-          initTokenClient: (config: {
-            client_id: string;
-            scope: string;
-            callback: (response: { access_token?: string; error?: any }) => void;
-          }) => {
-            requestAccessToken: (overrideConfig?: { prompt?: string }) => void;
-          };
-        };
-      };
-    };
-  }
+// Set right before redirecting to Google so that, after the OAuth redirect
+// brings the user back (a full page reload), App.tsx knows to reopen the
+// sync modal and auto-run the Liked Videos sync.
+export const PENDING_YT_SYNC_KEY = 'zenvault_pending_yt_sync';
+
+const YOUTUBE_SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
+
+export function toGoogleProfile(user: User | null | undefined): GoogleUserProfile | null {
+  if (!user) return null;
+  const meta = user.user_metadata || {};
+  return {
+    name: meta.full_name || meta.name || user.email?.split('@')[0] || 'Google User',
+    email: user.email || '',
+    picture: meta.avatar_url || meta.picture || ''
+  };
 }
 
-const CLIENT_ID_KEY = 'zenvault_google_client_id';
-const ACCESS_TOKEN_KEY = 'zenvault_google_access_token';
-const USER_PROFILE_KEY = 'zenvault_google_user_profile';
-
-export function getStoredGoogleClientId(): string {
-  return localStorage.getItem(CLIENT_ID_KEY) || '';
-}
-
-export function setStoredGoogleClientId(clientId: string): void {
-  localStorage.setItem(CLIENT_ID_KEY, clientId.trim());
-}
-
-export function getStoredAccessToken(): string | null {
-  return sessionStorage.getItem(ACCESS_TOKEN_KEY);
-}
-
-export function setStoredAccessToken(token: string): void {
-  sessionStorage.setItem(ACCESS_TOKEN_KEY, token);
-}
-
-export function getStoredUserProfile(): GoogleUserProfile | null {
-  try {
-    const raw = sessionStorage.getItem(USER_PROFILE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
-  }
-}
-
-export function setStoredUserProfile(profile: GoogleUserProfile | null): void {
-  if (profile) {
-    sessionStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
-  } else {
-    sessionStorage.removeItem(USER_PROFILE_KEY);
-  }
-}
-
-export function clearGoogleSession(): void {
-  sessionStorage.removeItem(ACCESS_TOKEN_KEY);
-  sessionStorage.removeItem(USER_PROFILE_KEY);
-}
-
-// Request Direct Login via Google Identity Services Popup
-export function requestGoogleLogin(
-  clientId: string,
-  onSuccess: (token: string) => void,
-  onError: (err: any) => void
-): void {
-  if (!window.google?.accounts?.oauth2) {
-    onError(new Error('Google Identity Services script is still loading. Please try again in a moment.'));
-    return;
-  }
-
-  try {
-    const tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
-      callback: (response) => {
-        if (response.error) {
-          onError(new Error(response.error.message || response.error));
-          return;
-        }
-        if (response.access_token) {
-          setStoredAccessToken(response.access_token);
-          onSuccess(response.access_token);
-        } else {
-          onError(new Error('No access token returned from Google.'));
-        }
+// Redirects to Google's consent screen via Supabase Auth; the browser
+// navigates away and back, so nothing meaningful happens after the await
+// unless Supabase fails to even start the redirect.
+export async function signInWithGoogle(redirectTo: string = window.location.origin): Promise<void> {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      scopes: YOUTUBE_SCOPE,
+      redirectTo,
+      // access_type=offline + consent ensures Google actually returns a
+      // provider token we can call the YouTube API with.
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent'
       }
+    }
+  });
+  if (error) throw error;
+}
+
+export async function signOutGoogle(): Promise<void> {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+// Fetches every page of a YouTube Data API list endpoint, following nextPageToken.
+async function fetchAllPages(baseUrl: string, accessToken: string): Promise<any[]> {
+  const items: any[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const url = pageToken ? `${baseUrl}&pageToken=${pageToken}` : baseUrl;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` }
     });
 
-    tokenClient.requestAccessToken({ prompt: 'consent' });
-  } catch (err: any) {
-    onError(err);
-  }
-}
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.error?.message || 'Failed to fetch from YouTube.');
+    }
 
-// Fetch Google User Profile
-export async function fetchGoogleProfile(accessToken: string): Promise<GoogleUserProfile> {
-  const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-  if (!res.ok) {
-    throw new Error('Failed to fetch Google profile.');
-  }
-  const data = await res.json();
-  const profile: GoogleUserProfile = {
-    name: data.name || data.given_name || 'Google User',
-    email: data.email || '',
-    picture: data.picture || ''
-  };
-  setStoredUserProfile(profile);
-  return profile;
+    const data = await res.json();
+    items.push(...(data.items || []));
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+
+  return items;
 }
 
 // Fetch Liked Videos (playlistId: 'LL')
 export async function fetchGoogleLikedVideos(accessToken: string): Promise<VideoItem[]> {
-  const url = 'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=LL&maxResults=50';
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => null);
-    throw new Error(errorData?.error?.message || 'Failed to fetch Liked Videos from YouTube.');
-  }
-
-  const data = await res.json();
-  return parsePlaylistItemsResponse(data, true);
+  const items = await fetchAllPages(
+    'https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=LL&maxResults=50',
+    accessToken
+  );
+  return parsePlaylistItems(items, true);
 }
 
 // Fetch All User's Personal Playlists
 export async function fetchGoogleUserPlaylists(accessToken: string): Promise<YouTubePlaylistMeta[]> {
-  const url = 'https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50';
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
+  const items = await fetchAllPages(
+    'https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50',
+    accessToken
+  );
 
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => null);
-    throw new Error(errorData?.error?.message || 'Failed to fetch your YouTube playlists.');
-  }
-
-  const data = await res.json();
-  const playlists: YouTubePlaylistMeta[] = [];
-
-  for (const item of data.items || []) {
-    playlists.push({
-      id: item.id,
-      title: item.snippet?.title || 'Untitled Playlist',
-      itemCount: item.contentDetails?.itemCount || 0,
-      thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url
-    });
-  }
-
-  return playlists;
+  return items.map((item) => ({
+    id: item.id,
+    title: item.snippet?.title || 'Untitled Playlist',
+    itemCount: item.contentDetails?.itemCount || 0,
+    thumbnail: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url
+  }));
 }
 
 // Fetch videos inside any playlist
 export async function fetchGooglePlaylistVideos(accessToken: string, playlistId: string): Promise<VideoItem[]> {
-  const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=50`;
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => null);
-    throw new Error(errorData?.error?.message || 'Failed to fetch playlist items.');
-  }
-
-  const data = await res.json();
-  return parsePlaylistItemsResponse(data, playlistId === 'LL');
+  const items = await fetchAllPages(
+    `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${playlistId}&maxResults=50`,
+    accessToken
+  );
+  return parsePlaylistItems(items, playlistId === 'LL');
 }
 
-function parsePlaylistItemsResponse(data: any, isLikedList: boolean): VideoItem[] {
-  const items: VideoItem[] = [];
+function parsePlaylistItems(items: any[], isLikedList: boolean): VideoItem[] {
+  const result: VideoItem[] = [];
 
-  for (const item of data.items || []) {
+  for (const item of items) {
     const videoId = item.contentDetails?.videoId || item.snippet?.resourceId?.videoId;
     if (!videoId) continue;
 
-    items.push({
+    result.push({
       id: 'yt_' + videoId,
       url: `https://www.youtube.com/watch?v=${videoId}`,
       title: item.snippet?.title || 'YouTube Video',
@@ -207,5 +136,5 @@ function parsePlaylistItemsResponse(data: any, isLikedList: boolean): VideoItem[
     });
   }
 
-  return items;
+  return result;
 }
