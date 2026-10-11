@@ -1,8 +1,19 @@
-import React from 'react';
-import { Play, Heart, Clock, Trash2, Film, ExternalLink } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Play,
+  Heart,
+  Clock,
+  MoreHorizontal,
+  ExternalLink,
+  Copy,
+  Trash2,
+  Film,
+  Check
+} from 'lucide-react';
 import { YoutubeIcon, InstagramIcon, TikTokIcon } from './Icons';
 import type { VideoItem } from '../types';
 import { zenAudio } from '../lib/audioSynthesizer';
+import { useToast } from './Toast';
 
 interface VideoCardProps {
   video: VideoItem;
@@ -17,8 +28,48 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   onPlay,
   onToggleLike,
   onToggleWatchLater,
-  onDelete
+  onDelete,
 }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const { success } = useToast();
+
+  // Close dropdown menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(video.url);
+    setCopied(true);
+    success('Link copied to clipboard');
+    zenAudio.playHapticClick(850, 0.04);
+    setTimeout(() => {
+      setCopied(false);
+      setMenuOpen(false);
+    }, 1200);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuOpen(false);
+    if (confirm(`Remove "${video.title}" from your ZenVault?`)) {
+      zenAudio.playHapticClick(350);
+      onDelete(video.id);
+      success('Video removed from sanctuary');
+    }
+  };
+
   const getPlatformIcon = () => {
     switch (video.platform) {
       case 'youtube':
@@ -28,161 +79,184 @@ export const VideoCard: React.FC<VideoCardProps> = ({
       case 'tiktok':
         return <TikTokIcon className="w-3.5 h-3.5 text-cyan-400" />;
       default:
-        return <Film className="w-3.5 h-3.5 text-indigo-400" />;
-    }
-  };
-
-  const getPlatformBadgeColor = () => {
-    switch (video.platform) {
-      case 'youtube':
-        return 'bg-red-500/15 text-red-300 border-red-500/30';
-      case 'instagram':
-        return 'bg-pink-500/15 text-pink-300 border-pink-500/30';
-      case 'tiktok':
-        return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
-      default:
-        return 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30';
+        return <Film className="w-3.5 h-3.5 text-[#8B7CFF]" />;
     }
   };
 
   const formattedDate = new Date(video.addedAt).toLocaleDateString(undefined, {
     month: 'short',
-    day: 'numeric'
+    day: 'numeric',
   });
 
   return (
-    <div className="group relative flex flex-col ios-card overflow-hidden">
-      
-      {/* Thumbnail Container */}
-      <div 
-        onClick={() => { zenAudio.playHapticClick(580); onPlay(video); }}
-        className="relative aspect-video w-full bg-slate-950 overflow-hidden cursor-pointer rounded-t-[23px]"
+    <div className="group relative flex flex-col zen-card">
+      {/* 16:9 Thumbnail Container */}
+      <div
+        onClick={() => {
+          zenAudio.playHapticClick(580);
+          onPlay(video);
+        }}
+        className="relative aspect-video w-full bg-[#08090D] overflow-hidden cursor-pointer"
       >
         {video.thumbnail ? (
           <img
             src={video.thumbnail}
             alt={video.title}
-            className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+            className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-slate-500">
-            <Film className="w-10 h-10 mb-2 opacity-50" />
-            <span className="text-[11px] font-mono tracking-wider uppercase">Zen Media Clip</span>
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#11131A] to-[#08090D] text-[#5E6573]">
+            <Film className="w-8 h-8 opacity-40 mb-1" />
+            <span className="text-[10px] font-mono tracking-wider uppercase">Zen Media</span>
           </div>
         )}
 
-        {/* Ambient Film Vignette */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#06080e] via-black/20 to-black/40 opacity-80 group-hover:opacity-60 transition-opacity duration-300" />
+        {/* Cinematic Vignette */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#11131A] via-transparent to-black/30 opacity-70 group-hover:opacity-40 transition-opacity duration-300" />
 
         {/* Platform Badge (Top Left) */}
-        <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5">
-          <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider backdrop-blur-xl border ${getPlatformBadgeColor()} shadow-sm`}>
+        <div className="absolute top-3 left-3 flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-mono uppercase font-bold tracking-wider bg-black/70 backdrop-blur-md text-[#F4F5FA] border border-white/10 shadow-sm">
             {getPlatformIcon()}
             <span>{video.platform}</span>
           </span>
         </div>
 
-        {/* Duration / Source Tag (Top Right) */}
+        {/* Duration Badge (Top Right) */}
         {video.duration && (
-          <div className="absolute top-3.5 right-3.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-black/60 backdrop-blur-xl text-white border border-white/15 shadow-sm">
+          <div className="absolute top-3 right-3 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-black/75 backdrop-blur-md text-white border border-white/10 shadow-sm">
             {video.duration}
           </div>
         )}
 
-        {/* Apple VisionOS Frosted Play Button (Center) */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-13 h-13 rounded-full bg-white/20 text-white flex items-center justify-center border border-white/40 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-2xl transform scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 ease-out">
-            <Play className="w-5 h-5 ml-0.5 fill-white text-white drop-shadow" />
+        {/* Center Hover Play Button */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="w-12 h-12 rounded-full bg-[#8B7CFF] text-[#08090D] flex items-center justify-center shadow-[0_4px_24px_rgba(139,124,255,0.6)] transform scale-90 group-hover:scale-100 transition-transform duration-200">
+            <Play className="w-5 h-5 ml-0.5 fill-[#08090D]" />
           </div>
         </div>
       </div>
 
-      {/* Card Content Details */}
-      <div className="p-4 sm:p-5 flex flex-col flex-1 justify-between gap-3 bg-[#06080e]/40 rounded-b-[23px]">
+      {/* Card Info Details */}
+      <div className="p-4 flex flex-col justify-between flex-1 gap-3 bg-[#11131A]">
         <div>
-          <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1.5">
-            <span className="uppercase tracking-widest text-indigo-400 font-semibold truncate max-w-[170px]">
+          <div className="flex items-center justify-between text-[11px] font-mono text-[#8E95A5] mb-1.5">
+            <span className="uppercase tracking-wider text-[#8B7CFF] font-semibold truncate max-w-[160px]">
               {video.channel || 'Curated'}
             </span>
-            <span className="text-slate-500">{formattedDate}</span>
+            <span className="text-[#5E6573] text-[10px]">{formattedDate}</span>
           </div>
 
-          <h3 
-            onClick={() => { zenAudio.playHapticClick(580); onPlay(video); }}
-            className="text-sm font-semibold text-white line-clamp-2 hover:text-indigo-300 cursor-pointer transition-colors leading-snug"
+          <h3
+            onClick={() => {
+              zenAudio.playHapticClick(580);
+              onPlay(video);
+            }}
+            className="text-xs sm:text-sm font-semibold text-[#F4F5FA] line-clamp-2 hover:text-[#8B7CFF] cursor-pointer transition-colors leading-snug"
             title={video.title}
           >
             {video.title}
           </h3>
 
           {video.notes && (
-            <p className="mt-1.5 text-xs text-slate-400 line-clamp-1 italic font-normal">
+            <p className="mt-1.5 text-xs text-[#8E95A5] line-clamp-1 italic font-normal">
               "{video.notes}"
             </p>
           )}
         </div>
 
-        {/* Tactical Bottom Toolbar */}
-        <div className="flex items-center justify-between pt-3 border-t border-white/[0.08]">
+        {/* Card Footer Toolbar */}
+        <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
           {/* Mood Pill */}
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono uppercase tracking-wider bg-white/[0.06] text-slate-300 border border-white/10 backdrop-blur-md">
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-white/[0.04] text-[#8E95A5] border border-white/5">
             {video.mood}
           </span>
 
-          {/* iOS Frosted Action Buttons */}
+          {/* Action Icons */}
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => { zenAudio.playHapticClick(800); onToggleLike(video.id); }}
-              title={video.isLiked ? 'Unlike' : 'Like'}
-              className={`p-2 rounded-full transition-all ${
-                video.isLiked
-                  ? 'text-rose-400 bg-rose-500/15 border border-rose-500/30'
-                  : 'text-slate-400 hover:text-white hover:bg-white/10 border border-transparent'
-              }`}
-            >
-              <Heart className={`w-3.5 h-3.5 ${video.isLiked ? 'fill-rose-400' : ''}`} />
-            </button>
-
-            <button
-              onClick={() => { zenAudio.playHapticClick(600); onToggleWatchLater(video.id); }}
-              title={video.isWatchLater ? 'Remove from Watch Later' : 'Add to Watch Later'}
-              className={`p-2 rounded-full transition-all ${
-                video.isWatchLater
-                  ? 'text-amber-400 bg-amber-500/15 border border-amber-500/30'
-                  : 'text-slate-400 hover:text-white hover:bg-white/10 border border-transparent'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" />
-            </button>
-
-            <a
-              href={video.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Open source URL"
-              className="p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-all border border-transparent"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-
+            {/* Like Button */}
             <button
               onClick={() => {
-                if (confirm(`Remove "${video.title}" from your ZenVault?`)) {
-                  zenAudio.playHapticClick(350);
-                  onDelete(video.id);
-                }
+                zenAudio.playHapticClick(800);
+                onToggleLike(video.id);
               }}
-              title="Delete video"
-              className="p-2 rounded-full text-slate-500 hover:text-rose-400 hover:bg-rose-500/15 transition-all border border-transparent"
+              title={video.isLiked ? 'Unlike' : 'Like'}
+              className={`p-1.5 rounded-lg transition-colors ${
+                video.isLiked
+                  ? 'text-rose-400 bg-rose-500/15'
+                  : 'text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.06]'
+              }`}
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Heart className={`w-4 h-4 ${video.isLiked ? 'fill-rose-400' : ''}`} />
             </button>
+
+            {/* Watch Later Button */}
+            <button
+              onClick={() => {
+                zenAudio.playHapticClick(600);
+                onToggleWatchLater(video.id);
+              }}
+              title={video.isWatchLater ? 'Remove from Watch Later' : 'Watch Later'}
+              className={`p-1.5 rounded-lg transition-colors ${
+                video.isWatchLater
+                  ? 'text-amber-400 bg-amber-500/15'
+                  : 'text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.06]'
+              }`}
+            >
+              <Clock className="w-4 h-4" />
+            </button>
+
+            {/* 3-Dot Dropdown Menu */}
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  zenAudio.playHapticClick(500, 0.02);
+                  setMenuOpen(!menuOpen);
+                }}
+                title="More options"
+                className="p-1.5 rounded-lg text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.06] transition-colors"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 bottom-full mb-1.5 w-44 rounded-xl bg-[#171A23] border border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.6)] py-1.5 z-20 animate-in fade-in zoom-in-95 duration-150">
+                  <button
+                    onClick={handleCopy}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors text-left"
+                  >
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copied ? 'Copied Link' : 'Copy Video URL'}</span>
+                  </button>
+
+                  <a
+                    href={video.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors text-left"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open in new tab</span>
+                  </a>
+
+                  <div className="my-1 border-t border-white/[0.06]" />
+
+                  <button
+                    onClick={handleDelete}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove from vault</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
       </div>
-
     </div>
   );
 };

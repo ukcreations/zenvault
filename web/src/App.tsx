@@ -13,37 +13,38 @@ import {
   toggleWatchLater,
   saveVideosToStorage
 } from './lib/storage';
-import { Navbar } from './components/Navbar';
+import { Sidebar, type NavView } from './components/Sidebar';
+import { Header } from './components/Header';
+import { DashboardView } from './components/DashboardView';
 import { VideoCard } from './components/VideoCard';
-import { ZenPlayer } from './components/ZenPlayer';
+import { VideoRow } from './components/VideoRow';
 import { MoodFilterBar } from './components/MoodFilterBar';
+import { ZenPlayer } from './components/ZenPlayer';
 import { AddMediaModal } from './components/AddMediaModal';
 import { YouTubeSyncModal } from './components/YouTubeSyncModal';
-import { AmbientAudioPlayer } from './components/AmbientAudioPlayer';
-import { ExtensionBridgeBanner } from './components/ExtensionBridgeBanner';
-import { FluidCanvas } from './components/FluidCanvas';
-import { HeroSanctuary } from './components/HeroSanctuary';
+import { ToastProvider, useToast } from './components/Toast';
 import { zenAudio } from './lib/audioSynthesizer';
-import { toGoogleProfile, PENDING_YT_SYNC_KEY } from './lib/googleAuth';
+import { toGoogleProfile, signOutGoogle, PENDING_YT_SYNC_KEY } from './lib/googleAuth';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 import { pullCloudVideos, pushVideo, pushVideos, deleteCloudVideo } from './lib/cloudSync';
-import confetti from 'canvas-confetti';
 
-export const App: React.FC = () => {
+const MainApp: React.FC = () => {
   // State
   const [videos, setVideos] = useState<VideoItem[]>(() => getSavedVideos());
+  const [currentView, setCurrentView] = useState<NavView>('dashboard');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'liked' | 'watch-later'>('all');
   const [selectedMood, setSelectedMood] = useState<MoodType>('all');
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSoundscape, setActiveSoundscape] = useState<SoundscapeType>('off');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isYTSyncOpen, setIsYTSyncOpen] = useState(false);
 
-  // Google/Supabase auth session - the single source of truth for sign-in state
+  // Google/Supabase auth session
   const [session, setSession] = useState<Session | null>(null);
   const [autoSyncPending, setAutoSyncPending] = useState(false);
   const googleUser = useMemo(() => toGoogleProfile(session?.user ?? null), [session]);
@@ -51,9 +52,10 @@ export const App: React.FC = () => {
 
   // Chrome Extension Bridge State
   const [extensionLinked, setExtensionLinked] = useState(false);
-  const [queuedExtensionVideos, setQueuedExtensionVideos] = useState<VideoItem[]>([]);
 
-  // Bootstrap the Supabase session and detect the OAuth redirect coming back.
+  const { success: toastSuccess } = useToast();
+
+  // Bootstrap Supabase session
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
@@ -77,9 +79,7 @@ export const App: React.FC = () => {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
-  // On login, merge the cloud library with whatever's local, then push
-  // anything that only existed locally up to the cloud so it follows the
-  // account to other devices too.
+  // Merge cloud library on login
   useEffect(() => {
     if (!userId) return;
 
@@ -115,7 +115,7 @@ export const App: React.FC = () => {
     })();
   }, [userId]);
 
-  // 1. Connect to Chrome Extension Bridge via postMessage
+  // Connect to Chrome Extension Bridge via postMessage
   useEffect(() => {
     const handleExtensionMessages = (event: MessageEvent) => {
       if (event.source !== window || !event.data) return;
@@ -123,10 +123,16 @@ export const App: React.FC = () => {
       if (event.data.type === 'ZENVAULT_EXTENSION_PONG' || event.data.type === 'ZENVAULT_EXTENSION_READY') {
         setExtensionLinked(true);
         if (event.data.videos && Array.isArray(event.data.videos)) {
-          // Find clips not yet in local storage
           const currentUrls = new Set(videos.map(v => v.url));
           const newClips = event.data.videos.filter((v: VideoItem) => !currentUrls.has(v.url));
-          setQueuedExtensionVideos(newClips);
+          if (newClips.length > 0) {
+            setVideos(prev => {
+              const updated = [...newClips, ...prev];
+              saveVideosToStorage(updated);
+              return updated;
+            });
+            toastSuccess('Extension bridge synced', `${newClips.length} clips imported.`);
+          }
         }
       }
 
@@ -139,16 +145,14 @@ export const App: React.FC = () => {
           return updated;
         });
         zenAudio.playHapticClick(900, 0.05);
+        toastSuccess('Video beamed from extension', item.title);
       }
     };
 
     window.addEventListener('message', handleExtensionMessages);
-
-    // Ping extension
     window.postMessage({ type: 'ZENVAULT_EXTENSION_PING' }, '*');
-
     return () => window.removeEventListener('message', handleExtensionMessages);
-  }, [videos]);
+  }, [videos, toastSuccess]);
 
   // Handlers
   const handleAddVideo = (video: VideoItem) => {
@@ -199,30 +203,20 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleImportExtensionStash = () => {
-    if (queuedExtensionVideos.length === 0) return;
-    handleBulkAdd(queuedExtensionVideos);
-    setQueuedExtensionVideos([]);
-    confetti({ particleCount: 50, spread: 70 });
-    zenAudio.playHapticClick(800, 0.1);
-    window.postMessage({ type: 'ZENVAULT_CLEAR_EXTENSION_STORAGE' }, '*');
+  const handleSignOut = async () => {
+    await signOutGoogle();
+    toastSuccess('Signed out of Google session');
   };
 
-  // Filtered List - most recently added/liked always shown first
+  // Filtered List
   const filteredVideos = useMemo(() => {
     return videos
       .filter(v => {
-        // Filter tab
-        if (activeFilter === 'liked' && !v.isLiked) return false;
-        if (activeFilter === 'watch-later' && !v.isWatchLater) return false;
-
-        // Mood
+        if (currentView === 'liked' && !v.isLiked) return false;
+        if (currentView === 'watch-later' && !v.isWatchLater) return false;
         if (selectedMood !== 'all' && v.mood !== selectedMood) return false;
-
-        // Platform
         if (selectedPlatform !== 'all' && v.platform !== selectedPlatform) return false;
 
-        // Search Query
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
           const matchesTitle = v.title.toLowerCase().includes(q);
@@ -234,9 +228,9 @@ export const App: React.FC = () => {
         return true;
       })
       .sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
-  }, [videos, activeFilter, selectedMood, selectedPlatform, searchQuery]);
+  }, [videos, currentView, selectedMood, selectedPlatform, searchQuery]);
 
-  // Playlist Navigation in Cinema Mode
+  // Cinema Mode Playlist Navigation
   const activeVideoIndex = useMemo(() => {
     if (!activeVideo) return -1;
     return filteredVideos.findIndex(v => v.id === activeVideo.id);
@@ -262,133 +256,140 @@ export const App: React.FC = () => {
   const totalWatchLater = videos.filter(v => v.isWatchLater).length;
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
-      
-      {/* 60FPS Interactive Fluid Chromatic Canvas */}
-      <FluidCanvas />
-
-      {/* Living Ambient Underglow Mesh */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[15%] left-[20%] w-[50vw] h-[50vw] rounded-full bg-indigo-900/15 blur-[130px]" />
-        <div className="absolute top-[40%] -right-[15%] w-[45vw] h-[45vw] rounded-full bg-violet-900/15 blur-[140px]" />
-        <div className="absolute -bottom-[20%] left-[10%] w-[50vw] h-[50vw] rounded-full bg-sky-900/15 blur-[130px]" />
-      </div>
-
-      {/* Navigation */}
-      <Navbar
-        onOpenAddModal={() => setIsAddModalOpen(true)}
-        onOpenYouTubeSync={() => setIsYTSyncOpen(true)}
+    <div className="min-h-screen bg-[#08090D] text-[#F4F5FA] flex flex-col relative selection:bg-[#8B7CFF] selection:text-white">
+      {/* Sidebar Navigation */}
+      <Sidebar
+        currentView={currentView}
+        onSelectView={setCurrentView}
+        selectedMood={selectedMood}
+        onSelectMood={setSelectedMood}
         totalCount={videos.length}
         likedCount={totalLiked}
         watchLaterCount={totalWatchLater}
-        activeFilter={activeFilter}
-        setActiveFilter={setActiveFilter}
+        onOpenYouTubeSync={() => setIsYTSyncOpen(true)}
+        onOpenAddModal={() => setIsAddModalOpen(true)}
         activeSoundscape={activeSoundscape}
         setActiveSoundscape={setActiveSoundscape}
-        extensionLinked={extensionLinked}
-        onImportFromExtension={handleImportExtensionStash}
         googleUser={googleUser}
+        onSignOut={handleSignOut}
+        extensionLinked={extensionLinked}
+        isOpenMobile={mobileMenuOpen}
+        onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      {/* Main Content Area */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col">
-        
-        {/* iOS / VisionOS Inspired Hero Sanctuary */}
-        <HeroSanctuary
-          totalCount={videos.length}
-          filteredCount={filteredVideos.length}
-          onStartCinema={() => {
-            if (filteredVideos.length > 0) {
-              zenAudio.playHapticClick(700);
-              setActiveVideo(filteredVideos[0]);
-            }
-          }}
+      {/* Main Content Area (Offset by Sidebar on Desktop) */}
+      <div className="flex-1 flex flex-col lg:pl-64 min-w-0 transition-all">
+        {/* Top Header */}
+        <Header
+          currentView={currentView}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          viewMode={viewMode}
+          onToggleViewMode={setViewMode}
           onOpenAddModal={() => setIsAddModalOpen(true)}
+          onOpenYouTubeSync={() => setIsYTSyncOpen(true)}
+          onOpenMobileMenu={() => setMobileMenuOpen(true)}
+          filteredCount={currentView === 'dashboard' ? videos.length : filteredVideos.length}
         />
 
-        {/* Extension Bridge Notification Banner */}
-        <ExtensionBridgeBanner
-          extensionLinked={extensionLinked}
-          queuedExtensionCount={queuedExtensionVideos.length}
-          onImportQueued={handleImportExtensionStash}
-          onOpenExtensionGuide={() => setIsAddModalOpen(true)}
-        />
-
-        {/* Mood & Platform Filters */}
-        <div className="mb-8">
-          <MoodFilterBar
-            selectedMood={selectedMood}
-            onSelectMood={setSelectedMood}
-            selectedPlatform={selectedPlatform}
-            onSelectPlatform={setSelectedPlatform}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-          />
-        </div>
-
-        {/* Video Grid */}
-        {filteredVideos.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredVideos.map((video) => (
-              <VideoCard
-                key={video.id}
-                video={video}
-                onPlay={(v) => setActiveVideo(v)}
-                onToggleLike={handleToggleLike}
-                onToggleWatchLater={handleToggleWatchLater}
-                onDelete={handleDelete}
+        {/* Page Body */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+          {currentView === 'dashboard' ? (
+            <DashboardView
+              videos={videos}
+              googleUser={googleUser}
+              onSelectView={setCurrentView}
+              onOpenAddModal={() => setIsAddModalOpen(true)}
+              onOpenYouTubeSync={() => setIsYTSyncOpen(true)}
+              onPlayVideo={(v) => setActiveVideo(v)}
+              activeSoundscape={activeSoundscape}
+            />
+          ) : (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              {/* Mood & Platform Filter Controls */}
+              <MoodFilterBar
+                selectedMood={selectedMood}
+                onSelectMood={setSelectedMood}
+                selectedPlatform={selectedPlatform}
+                onSelectPlatform={setSelectedPlatform}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
               />
-            ))}
-          </div>
-        ) : (
-          <div className="flex-1 flex flex-col items-center justify-center py-20 px-6 text-center ios-card rounded-3xl my-6">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400 mb-4 shadow-[0_0_24px_rgba(99,102,241,0.2)]">
-              <Compass className="w-8 h-8 animate-pulse text-indigo-300" />
+
+              {/* Video Collection (Grid or List View) */}
+              {filteredVideos.length > 0 ? (
+                viewMode === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {filteredVideos.map((video) => (
+                      <VideoCard
+                        key={video.id}
+                        video={video}
+                        onPlay={(v) => setActiveVideo(v)}
+                        onToggleLike={handleToggleLike}
+                        onToggleWatchLater={handleToggleWatchLater}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {filteredVideos.map((video) => (
+                      <VideoRow
+                        key={video.id}
+                        video={video}
+                        onPlay={(v) => setActiveVideo(v)}
+                        onToggleLike={handleToggleLike}
+                        onToggleWatchLater={handleToggleWatchLater}
+                        onDelete={handleDelete}
+                      />
+                    ))}
+                  </div>
+                )
+              ) : (
+                /* Empty filtered view */
+                <div className="py-20 px-6 rounded-2xl bg-[#11131A] border border-white/[0.07] text-center flex flex-col items-center justify-center">
+                  <div className="w-14 h-14 rounded-2xl bg-[#8B7CFF]/10 border border-[#8B7CFF]/20 flex items-center justify-center text-[#8B7CFF] mb-4">
+                    <Compass className="w-6 h-6 animate-pulse" />
+                  </div>
+                  <h3 className="text-base font-bold text-[#F4F5FA] font-display mb-1">
+                    No videos match this filter
+                  </h3>
+                  <p className="text-xs text-[#8E95A5] max-w-sm mb-6 leading-relaxed">
+                    {searchQuery
+                      ? `No stashes found matching "${searchQuery}". Try adjusting your keywords or clearing the filter.`
+                      : 'No videos found in this channel yet.'}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        setSelectedMood('all');
+                        setSelectedPlatform('all');
+                        setSearchQuery('');
+                        zenAudio.playHapticClick(600);
+                      }}
+                      className="btn-secondary px-4 py-2 rounded-xl text-xs font-semibold"
+                    >
+                      Reset Filters
+                    </button>
+                    <button
+                      onClick={() => {
+                        zenAudio.playHapticClick(700);
+                        setIsAddModalOpen(true);
+                      }}
+                      className="btn-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Video</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <h3 className="text-xl font-bold text-white mb-2 font-display">No videos match this filter</h3>
-            <p className="text-xs sm:text-sm text-slate-300/80 max-w-md mb-6 leading-relaxed">
-              {searchQuery
-                ? `No clips found matching "${searchQuery}". Try a different keyword or reset filters.`
-                : 'Your sanctuary is quiet. Add a YouTube or Instagram reel URL, or sync with your YouTube account.'}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                onClick={() => {
-                  setSelectedMood('all');
-                  setSelectedPlatform('all');
-                  setActiveFilter('all');
-                  setSearchQuery('');
-                  zenAudio.playHapticClick(600);
-                }}
-                className="ios-btn-glass px-5 py-2.5 rounded-full text-xs font-semibold text-slate-200 hover:text-white"
-              >
-                Reset All Filters
-              </button>
-              <button
-                onClick={() => {
-                  zenAudio.playHapticClick(700);
-                  setIsAddModalOpen(true);
-                }}
-                className="ios-btn-primary px-5 py-2.5 rounded-full text-xs font-semibold text-white flex items-center gap-2 shadow-[0_4px_20px_rgba(99,102,241,0.35)]"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Add Video</span>
-              </button>
-            </div>
-          </div>
-        )}
+          )}
+        </main>
+      </div>
 
-      </main>
-
-      {/* Footer */}
-      <footer className="relative z-10 w-full border-t border-white/5 bg-[#07090e]/80 py-6 text-center text-xs text-slate-500 font-mono">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span>ZENVAULT • ZERO ALGORITHMIC INTERFERENCE</span>
-          <span>CURATED PRIVATE MEDIA RETREAT</span>
-        </div>
-      </footer>
-
-      {/* Fullscreen Zen Cinema Player */}
+      {/* Cinema Mode Player */}
       <ZenPlayer
         video={activeVideo}
         onClose={() => setActiveVideo(null)}
@@ -396,12 +397,6 @@ export const App: React.FC = () => {
         onPrev={handlePrevVideo}
         onToggleLike={handleToggleLike}
         onToggleWatchLater={handleToggleWatchLater}
-        activeSoundscape={activeSoundscape}
-        setActiveSoundscape={setActiveSoundscape}
-      />
-
-      {/* Floating Ambient Sound Dock */}
-      <AmbientAudioPlayer
         activeSoundscape={activeSoundscape}
         setActiveSoundscape={setActiveSoundscape}
       />
@@ -430,8 +425,15 @@ export const App: React.FC = () => {
         }}
         onSyncComplete={handleBulkAdd}
       />
-
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <ToastProvider>
+      <MainApp />
+    </ToastProvider>
   );
 };
 
