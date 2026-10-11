@@ -17,10 +17,11 @@ export function extractPlatformAndId(url: string): { platform: Platform; id: str
       }
 
       if (videoId) {
+        const originParam = typeof window !== 'undefined' ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
         return {
           platform: 'youtube',
           id: videoId,
-          embedUrl: `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1`
+          embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1${originParam}`
         };
       }
     }

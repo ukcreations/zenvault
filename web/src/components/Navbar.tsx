@@ -1,6 +1,6 @@
 import React from 'react';
-import { Sparkles, Plus, Volume2, VolumeX, Radio } from 'lucide-react';
-import { YoutubeIcon } from './Icons';
+import { Sparkles, Plus, VolumeX, Radio, Heart, Clock } from 'lucide-react';
+import { YoutubeIcon, GoogleIcon } from './Icons';
 import { zenAudio } from '../lib/audioSynthesizer';
 import type { SoundscapeType } from '../types';
 import type { GoogleUserProfile } from '../lib/googleAuth';
@@ -46,142 +46,158 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#07090e]/80 border-b border-white/8 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 w-full px-4 sm:px-6 lg:px-8 pt-3 pb-2 transition-all">
+      <div className="max-w-7xl mx-auto ios-nav-capsule px-4 sm:px-6 h-16 flex items-center justify-between gap-3 shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
         
-        {/* Brand & Tactical Telemetry */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-violet-400 p-[1px] shadow-[0_0_20px_rgba(99,102,241,0.4)]">
-              <div className="w-full h-full bg-[#07090e] rounded-[11px] flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-indigo-400 animate-pulse" />
-              </div>
+        {/* Left: Brand with Iridescent Glow */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-[1.5px] shadow-[0_0_24px_rgba(99,102,241,0.5)]">
+            <div className="w-full h-full bg-[#090d18]/90 rounded-[14px] flex items-center justify-center backdrop-blur-md">
+              <Sparkles className="w-5 h-5 text-indigo-300 animate-pulse" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold tracking-tight text-white text-lg sm:text-xl font-display">
-                  ZENVAULT
-                </span>
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                  ALGO-FREE
-                </span>
-              </div>
-              <div className="hidden md:flex items-center gap-2 text-[10px] text-slate-400 font-mono tracking-wider">
-                <span>[SANCTUARY: SECURE]</span>
-                <span className="text-slate-600">•</span>
-                <span>NO FEEDS • NO COMMENTS</span>
-              </div>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold tracking-tight text-white text-base sm:text-lg font-display">
+                ZENVAULT
+              </span>
+              <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-mono uppercase tracking-widest bg-emerald-500/15 text-emerald-300 border border-emerald-400/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                ALGO-SHIELD
+              </span>
+            </div>
+            <div className="hidden 2xl:block text-[10px] text-slate-400 font-mono tracking-wider">
+              <span>ZERO FEEDS • PURE CALM</span>
             </div>
           </div>
         </div>
 
-        {/* Center Pill Quick Navigation */}
-        <div className="hidden lg:flex items-center bg-white/[0.03] border border-white/10 rounded-full p-1 shadow-inner">
+        {/* Center: iOS Segmented Control Pills */}
+        <div className="hidden lg:flex items-center ios-segmented-control text-xs font-semibold">
           <button
             onClick={() => { zenAudio.playHapticClick(); setActiveFilter('all'); }}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 ios-segmented-item flex items-center gap-1.5 ${
               activeFilter === 'all'
-                ? 'bg-indigo-600 text-white shadow-md'
+                ? 'ios-segmented-item-active'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            All Vault ({totalCount})
+            <span>All</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300 font-mono">
+              {totalCount}
+            </span>
           </button>
+
           <button
             onClick={() => { zenAudio.playHapticClick(); setActiveFilter('liked'); }}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 ios-segmented-item flex items-center gap-1.5 ${
               activeFilter === 'liked'
-                ? 'bg-rose-600 text-white shadow-md'
+                ? 'ios-segmented-item-active text-rose-300'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            ♥ Liked ({likedCount})
+            <Heart className={`w-3.5 h-3.5 ${activeFilter === 'liked' ? 'fill-rose-400 text-rose-400' : ''}`} />
+            <span>Liked</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300 font-mono">
+              {likedCount}
+            </span>
           </button>
+
           <button
             onClick={() => { zenAudio.playHapticClick(); setActiveFilter('watch-later'); }}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 ios-segmented-item flex items-center gap-1.5 ${
               activeFilter === 'watch-later'
-                ? 'bg-amber-600 text-white shadow-md'
+                ? 'ios-segmented-item-active text-amber-300'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            ⏳ Watch Later ({watchLaterCount})
+            <Clock className="w-3.5 h-3.5" />
+            <span>Later</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/10 text-slate-300 font-mono">
+              {watchLaterCount}
+            </span>
           </button>
         </div>
 
-        {/* Actions Toolbar */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          {/* Ambient Sound Quick Toggle */}
+        {/* Right Actions Toolbar */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          
+          {/* iOS Sound Toggle with Live Waveform */}
           <button
             onClick={toggleSound}
             title={activeSoundscape === 'off' ? 'Turn on relaxing ambient rain' : 'Mute ambient soundscape'}
-            className={`tactile-btn flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
+            className={`ios-btn-glass flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-medium transition-all ${
               activeSoundscape !== 'off'
-                ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.25)]'
-                : 'bg-white/[0.04] border-white/10 text-slate-400 hover:text-slate-200'
+                ? 'border-indigo-400/40 text-indigo-300 shadow-[0_0_20px_rgba(99,102,241,0.3)]'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             {activeSoundscape !== 'off' ? (
               <>
-                <Volume2 className="w-4 h-4 text-indigo-400 animate-bounce" />
-                <span className="hidden sm:inline capitalize font-mono text-[11px]">{activeSoundscape}</span>
+                <div className="flex items-end gap-[2px] h-3.5">
+                  <span className="w-0.5 bg-indigo-400 rounded-full wave-bar-1" />
+                  <span className="w-0.5 bg-indigo-300 rounded-full wave-bar-2" />
+                  <span className="w-0.5 bg-indigo-400 rounded-full wave-bar-3" />
+                  <span className="w-0.5 bg-indigo-300 rounded-full wave-bar-4" />
+                </div>
+                <span className="capitalize font-mono text-[11px] hidden sm:inline">{activeSoundscape}</span>
               </>
             ) : (
               <>
-                <VolumeX className="w-4 h-4 text-slate-500" />
-                <span className="hidden sm:inline text-[11px]">Sound</span>
+                <VolumeX className="w-3.5 h-3.5 text-slate-500" />
+                <span className="text-[11px] hidden sm:inline">Ambience</span>
               </>
             )}
           </button>
 
-          {/* Extension Linked Indicator / Sync Button */}
+          {/* Extension Linked Pill */}
           {extensionLinked && (
             <button
               onClick={() => { zenAudio.playHapticClick(); onImportFromExtension(); }}
-              className="tactile-btn hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/20"
+              className="ios-btn-glass hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/15"
               title="Chrome extension bridge connected. Click to refresh stash."
             >
               <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-              <span>Bridge Sync</span>
+              <span>Bridge</span>
             </button>
           )}
 
-          {/* YouTube Sync / Google Account Status Button */}
+          {/* Google / YouTube Account Button */}
           {googleUser ? (
             <button
               onClick={() => { zenAudio.playHapticClick(); onOpenYouTubeSync(); }}
-              className="tactile-btn flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-red-500/10 border border-red-500/30 text-white hover:bg-red-500/20"
-              title={`Connected as ${googleUser.name} (${googleUser.email}). Click to sync.`}
+              className="ios-btn-glass flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border-indigo-400/30 text-white"
+              title={`Connected as ${googleUser.name}`}
             >
               {googleUser.picture ? (
-                <img src={googleUser.picture} alt="" className="w-5 h-5 rounded-full border border-red-400" />
+                <img src={googleUser.picture} alt="" className="w-5 h-5 rounded-full border border-indigo-400/50" />
               ) : (
-                <YoutubeIcon className="w-4 h-4 text-red-500" />
+                <GoogleIcon className="w-4 h-4" />
               )}
-              <span className="hidden sm:inline text-[11px] font-medium text-red-200">
+              <span className="hidden sm:inline text-[11px] font-medium text-slate-200">
                 {googleUser.name.split(' ')[0]}
               </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
             </button>
           ) : (
             <button
               onClick={() => { zenAudio.playHapticClick(); onOpenYouTubeSync(); }}
-              className="tactile-btn flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/[0.04] border border-white/10 text-slate-200 hover:bg-white/[0.08] hover:border-white/20"
+              className="ios-btn-glass flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-semibold text-slate-200"
             >
               <YoutubeIcon className="w-4 h-4 text-red-500" />
-              <span className="hidden sm:inline">Google / YouTube</span>
+              <span className="hidden sm:inline">Sync</span>
             </button>
           )}
 
-          {/* Add Video Button */}
+          {/* iOS Vibrant "+ Add Media" Primary Capsule Button */}
           <button
             onClick={() => { zenAudio.playHapticClick(); onOpenAddModal(); }}
-            className="tactile-btn flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-[0_0_20px_rgba(99,102,241,0.35)] hover:shadow-[0_0_25px_rgba(99,102,241,0.5)] border border-indigo-400/30"
+            className="ios-btn-primary flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold text-white uppercase tracking-wider"
           >
-            <Plus className="w-4 h-4" />
-            <span>Add Media</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add</span>
           </button>
+
         </div>
 
       </div>

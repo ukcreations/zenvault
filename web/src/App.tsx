@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Film, 
-  ShieldCheck, 
   Compass, 
   Plus
 } from 'lucide-react';
@@ -22,6 +20,8 @@ import { AddMediaModal } from './components/AddMediaModal';
 import { YouTubeSyncModal } from './components/YouTubeSyncModal';
 import { AmbientAudioPlayer } from './components/AmbientAudioPlayer';
 import { ExtensionBridgeBanner } from './components/ExtensionBridgeBanner';
+import { FluidCanvas } from './components/FluidCanvas';
+import { HeroSanctuary } from './components/HeroSanctuary';
 import { zenAudio } from './lib/audioSynthesizer';
 import { getStoredUserProfile } from './lib/googleAuth';
 import confetti from 'canvas-confetti';
@@ -187,13 +187,16 @@ export const App: React.FC = () => {
   const totalWatchLater = videos.filter(v => v.isWatchLater).length;
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col selection:bg-indigo-500 selection:text-white relative overflow-x-hidden">
       
+      {/* 60FPS Interactive Fluid Chromatic Canvas */}
+      <FluidCanvas />
+
       {/* Living Ambient Underglow Mesh */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-[15%] left-[20%] w-[50vw] h-[50vw] rounded-full bg-indigo-900/10 blur-[130px]" />
-        <div className="absolute top-[40%] -right-[15%] w-[45vw] h-[45vw] rounded-full bg-violet-900/10 blur-[140px]" />
-        <div className="absolute -bottom-[20%] left-[10%] w-[50vw] h-[50vw] rounded-full bg-blue-900/10 blur-[130px]" />
+        <div className="absolute -top-[15%] left-[20%] w-[50vw] h-[50vw] rounded-full bg-indigo-900/15 blur-[130px]" />
+        <div className="absolute top-[40%] -right-[15%] w-[45vw] h-[45vw] rounded-full bg-violet-900/15 blur-[140px]" />
+        <div className="absolute -bottom-[20%] left-[10%] w-[50vw] h-[50vw] rounded-full bg-sky-900/15 blur-[130px]" />
       </div>
 
       {/* Navigation */}
@@ -213,40 +216,20 @@ export const App: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col">
         
-        {/* Zen Sanctuary Hero Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/8 pb-6">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 mb-3">
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-              <span>DISTRACTION-FREE MEDIA SANCTUARY</span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white font-display">
-              Watch only what you chose to save.
-            </h1>
-            <p className="mt-1.5 text-xs sm:text-sm text-slate-400 max-w-xl">
-              Zero algorithmic rabbit holes. Zero toxic comment sections. No infinite feeds.
-              Just your saved reels, liked videos, and curated tranquil stashes.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                if (filteredVideos.length > 0) {
-                  zenAudio.playHapticClick(700);
-                  setActiveVideo(filteredVideos[0]);
-                }
-              }}
-              disabled={filteredVideos.length === 0}
-              className="tactile-btn flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-white text-xs font-semibold disabled:opacity-40 transition-all shadow-sm"
-            >
-              <Film className="w-4 h-4 text-indigo-400" />
-              <span>Cinema Mode ({filteredVideos.length})</span>
-            </button>
-          </div>
-        </div>
+        {/* iOS / VisionOS Inspired Hero Sanctuary */}
+        <HeroSanctuary
+          totalCount={videos.length}
+          filteredCount={filteredVideos.length}
+          onStartCinema={() => {
+            if (filteredVideos.length > 0) {
+              zenAudio.playHapticClick(700);
+              setActiveVideo(filteredVideos[0]);
+            }
+          }}
+          onOpenAddModal={() => setIsAddModalOpen(true)}
+        />
 
         {/* Extension Bridge Notification Banner */}
         <ExtensionBridgeBanner
@@ -283,12 +266,12 @@ export const App: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center py-20 px-4 text-center liquid-crystal-panel border border-white/10 rounded-3xl my-6">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4">
-              <Compass className="w-8 h-8 animate-pulse" />
+          <div className="flex-1 flex flex-col items-center justify-center py-20 px-6 text-center ios-card rounded-3xl my-6">
+            <div className="w-16 h-16 rounded-2xl bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400 mb-4 shadow-[0_0_24px_rgba(99,102,241,0.2)]">
+              <Compass className="w-8 h-8 animate-pulse text-indigo-300" />
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">No videos match this filter</h3>
-            <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
+            <h3 className="text-xl font-bold text-white mb-2 font-display">No videos match this filter</h3>
+            <p className="text-xs sm:text-sm text-slate-300/80 max-w-md mb-6 leading-relaxed">
               {searchQuery
                 ? `No clips found matching "${searchQuery}". Try a different keyword or reset filters.`
                 : 'Your sanctuary is quiet. Add a YouTube or Instagram reel URL, or sync with your YouTube account.'}
@@ -300,14 +283,18 @@ export const App: React.FC = () => {
                   setSelectedPlatform('all');
                   setActiveFilter('all');
                   setSearchQuery('');
+                  zenAudio.playHapticClick(600);
                 }}
-                className="tactile-btn px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300"
+                className="ios-btn-glass px-5 py-2.5 rounded-full text-xs font-semibold text-slate-200 hover:text-white"
               >
                 Reset All Filters
               </button>
               <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="tactile-btn px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white shadow-lg flex items-center gap-2"
+                onClick={() => {
+                  zenAudio.playHapticClick(700);
+                  setIsAddModalOpen(true);
+                }}
+                className="ios-btn-primary px-5 py-2.5 rounded-full text-xs font-semibold text-white flex items-center gap-2 shadow-[0_4px_20px_rgba(99,102,241,0.35)]"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Video</span>
