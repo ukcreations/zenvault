@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZenVault Bridge</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header with Telemetry -->
+    <header class="header">
+      <div class="brand">
+        <span class="logo-orb"></span>
+        <div class="brand-text">
+          <span class="title">ZENVAULT</span>
+          <span class="subtitle">SANCTUARY BRIDGE</span>
+        </div>
+      </div>
+      <div class="telemetry-badge">
+        <span class="pulse-dot"></span>
+        <span class="status-label">ONLINE</span>
+      </div>
+    </header>
+
+    <!-- Main Quick Action -->
+    <section class="action-card">
+      <div class="tab-info" id="tabInfo">
+        <span class="tab-icon" id="tabIcon">🌐</span>
+        <div class="tab-details">
+          <div class="tab-title" id="tabTitle">Detecting current tab...</div>
+          <div class="tab-url" id="tabUrl">—</div>
+        </div>
+      </div>
+      <button class="btn-save" id="btnSaveTab">
+        <span>✨</span>
+        <span>Save to ZenVault</span>
+      </button>
+    </section>
+
+    <!-- Recent Stash Counter & Quick Open -->
+    <section class="stash-header">
+      <span class="stash-title">CAPTURED CLIPS (<span id="stashCount">0</span>)</span>
+      <button class="btn-clear" id="btnClearStash">Clear</button>
+    </section>
+
+    <!-- List of Saved Clips -->
+    <div class="stash-list" id="stashList">
+      <div class="empty-state" id="emptyState">
+        <span>🌙</span>
+        <p>No clips queued yet.<br>Save any YouTube, Reel, or video link.</p>
+      </div>
+    </div>
+
+    <!-- Footer launcher -->
+    <footer class="footer">
+      <button class="btn-launch" id="btnOpenApp">
+        <span>🧘 Open ZenVault Cinema</span>
+        <span>→</span>
+      </button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

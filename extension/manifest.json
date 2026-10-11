@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "ZenVault Bridge",
+  "version": "1.0.0",
+  "description": "Beam Instagram Reels, YouTube videos, and web clips into your distraction-free ZenVault sanctuary.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "permissions": [
+    "storage",
+    "activeTab",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://*.instagram.com/*",
+    "https://*.youtube.com/*",
+    "https://*.tiktok.com/*",
+    "http://localhost:*/*"
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "ZenVault Bridge",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.instagram.com/*"],
+      "js": ["content/instagram.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://*.youtube.com/*"],
+      "js": ["content/youtube.js"],
+      "css": ["content/content.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["http://localhost:5173/*", "http://localhost:3000/*"],
+      "js": ["content/webapp-bridge.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
