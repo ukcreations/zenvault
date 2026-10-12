@@ -2,30 +2,29 @@
 
 @layer base {
   :root {
-    --bg-base: #08090D;
-    --surface-1: #11131A;
-    --surface-2: #171A23;
-    --surface-3: #1E222E;
-    --accent-primary: #8B7CFF;
-    --accent-primary-hover: #7A6AE6;
-    --accent-blue: #38BDF8;
-    --text-primary: #F4F5FA;
-    --text-secondary: #8E95A5;
-    --text-muted: #5E6573;
-    --border-subtle: rgba(255, 255, 255, 0.07);
-    --border-highlight: rgba(255, 255, 255, 0.14);
+    --bg-base: #0f0f0f;
+    --surface-1: #181818;
+    --surface-2: #212121;
+    --surface-3: #282828;
+    --yt-red: #ff0000;
+    --yt-red-hover: #cc0000;
+    --text-primary: #f1f1f1;
+    --text-secondary: #aaaaaa;
+    --text-muted: #717171;
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-highlight: rgba(255, 255, 255, 0.16);
     --apple-ease: cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   body {
-    background-color: #08090D;
-    color: #F4F5FA;
+    background-color: #0f0f0f;
+    color: #f1f1f1;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow-x: hidden;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    selection-background-color: #8B7CFF;
+    selection-background-color: rgba(255, 255, 255, 0.25);
     selection-color: #ffffff;
   }
 
@@ -35,85 +34,65 @@
 }
 
 /* ========================================================
-   ZenVault Luxury Dark & Glass Design System
+   ReWatch Everywhere — YouTube Modern & Classic Frost Blur
    ======================================================== */
 
 /* Surface Level 1 (Panels, Drawers, Modals) */
 .surface-1 {
-  background: #11131A;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #181818;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* Surface Level 2 (Cards, Dropdowns, Segmented Controls) */
 .surface-2 {
-  background: #171A23;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #212121;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Precision Glass Panel (Header, Floating Bars, Modals) */
-.glass-panel {
-  background: linear-gradient(135deg, rgba(23, 26, 35, 0.85) 0%, rgba(17, 19, 26, 0.85) 100%);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+/* Classic Frosted Glass Panel (Header, Floating Bars, Modals) */
+.glass-panel, .yt-frost {
+  background: rgba(18, 18, 18, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 
     inset 0 1px 1px 0 rgba(255, 255, 255, 0.08),
     0 16px 40px -8px rgba(0, 0, 0, 0.6);
 }
 
-/* Premium Interactive Video Card */
-.zen-card {
-  background: #11131A;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.zen-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(139, 124, 255, 0.35);
-  box-shadow: 
-    0 20px 40px -12px rgba(0, 0, 0, 0.7),
-    0 0 24px -4px rgba(139, 124, 255, 0.15);
-}
-
-/* Primary Button (Refined Violet / Indigo) */
+/* Primary Button (Crisp White Luxury Pill) */
 .btn-primary {
-  background: #8B7CFF;
-  color: #08090D;
+  background: #ffffff;
+  color: #0f0f0f;
   font-weight: 600;
+  border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 
-    inset 0 1px 1px 0 rgba(255, 255, 255, 0.4),
-    0 4px 16px rgba(139, 124, 255, 0.35);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-primary:hover {
-  background: #9D90FF;
+  background: #e5e5e5;
   transform: translateY(-1px);
-  box-shadow: 
-    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.5),
-    0 6px 22px rgba(139, 124, 255, 0.45);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.15);
 }
 
 .btn-primary:active {
   transform: scale(0.97);
 }
 
-/* Secondary Button (Elevated Charcoal / Hairline Border) */
+/* Secondary Button (YouTube Dark Surface Pill) */
 .btn-secondary {
-  background: #171A23;
-  color: #F4F5FA;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: #212121;
+  color: #f1f1f1;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-secondary:hover {
-  background: #1E222E;
-  border-color: rgba(255, 255, 255, 0.18);
+  background: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.2);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -122,16 +101,38 @@
   transform: scale(0.97);
 }
 
+/* Red YouTube Action Button */
+.btn-red {
+  background: #ff0000;
+  color: #ffffff;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 12px rgba(255, 0, 0, 0.25);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-red:hover {
+  background: #e60000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(255, 0, 0, 0.4);
+}
+
+.btn-red:active {
+  transform: scale(0.97);
+}
+
 /* Ghost Button */
 .btn-ghost {
-  color: #8E95A5;
+  color: #aaaaaa;
   background: transparent;
+  border-radius: 9999px;
   transition: all 0.2s ease;
 }
 
 .btn-ghost:hover {
-  color: #F4F5FA;
-  background: rgba(255, 255, 255, 0.05);
+  color: #f1f1f1;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .btn-ghost:active {
@@ -140,8 +141,8 @@
 
 /* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -149,15 +150,18 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.18);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 124, 255, 0.5);
+  background: rgba(255, 255, 255, 0.35);
 }
 
-
+/* Motion Utilities */
+.yt-card-hover {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
 /* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {

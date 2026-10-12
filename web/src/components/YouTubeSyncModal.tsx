@@ -115,7 +115,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
       }
       onSyncComplete(videos);
       confetti({ particleCount: 50, spread: 60 });
-      const msg = `Synced ${videos.length} Liked videos into your sanctuary!`;
+      const msg = `Synced ${videos.length} Liked videos into your library!`;
       setSuccessMsg(msg);
       success('YouTube sync complete', `${videos.length} videos added.`);
     } catch (err: any) {
@@ -161,26 +161,26 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-2xl p-4 animate-in fade-in">
-      <div className="relative w-full max-w-xl rounded-2xl bg-[#11131A] border border-white/[0.08] shadow-[0_24px_60px_rgba(0,0,0,0.8)] overflow-hidden">
+      <div className="relative w-full max-w-xl rounded-2xl bg-[#181818] border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.8)] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.07] bg-[#141722]">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#212121]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-              <YoutubeIcon className="w-5 h-5 text-red-400" />
+              <YoutubeIcon className="w-5 h-5 text-[#ff0000]" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-[#F4F5FA] font-display">
-                YouTube Cloud Synchronization
+              <h2 className="text-sm sm:text-base font-bold text-[#f1f1f1]">
+                YouTube Cloud Sync
               </h2>
-              <p className="text-[11px] text-[#8E95A5]">
-                Directly import your Liked Videos & custom playlists
+              <p className="text-[11px] text-[#aaaaaa]">
+                Import your YouTube Liked Videos & custom playlists
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors"
+            className="p-1.5 rounded-lg text-[#aaaaaa] hover:text-[#f1f1f1] hover:bg-white/10 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -191,49 +191,49 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
           {/* Alerts */}
           {error && (
             <div className="flex items-start gap-3 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
               <div className="flex-1 leading-relaxed">{error}</div>
             </div>
           )}
 
           {successMsg && (
             <div className="flex items-start gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs">
-              <Check className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <Check className="w-4 h-4 mt-0.5 shrink-0" />
               <div className="flex-1 leading-relaxed">{successMsg}</div>
             </div>
           )}
 
           {/* Account Status Card */}
           {userProfile ? (
-            <div className="p-4 rounded-xl bg-[#171A23] border border-white/[0.08] flex items-center justify-between gap-3">
+            <div className="p-4 rounded-xl bg-[#212121] border border-white/10 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 {userProfile.picture ? (
                   <img
                     src={userProfile.picture}
                     alt=""
-                    className="w-10 h-10 rounded-full border border-white/15 flex-shrink-0"
+                    className="w-10 h-10 rounded-full border border-white/20 shrink-0"
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-[#8B7CFF]/20 text-[#8B7CFF] flex items-center justify-center font-bold text-sm">
+                  <div className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center font-bold text-sm">
                     {userProfile.name.charAt(0)}
                   </div>
                 )}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#F4F5FA] truncate">
+                    <span className="text-xs font-bold text-[#f1f1f1] truncate">
                       {userProfile.name}
                     </span>
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-mono bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                       CONNECTED
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#8E95A5] truncate">{userProfile.email}</p>
+                  <p className="text-[11px] text-[#aaaaaa] truncate">{userProfile.email}</p>
                 </div>
               </div>
 
               <button
                 onClick={handleSignOut}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#8E95A5] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#aaaaaa] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Disconnect</span>
@@ -241,16 +241,16 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
             </div>
           ) : (
             /* Not Signed In: Google OAuth Connect Callout */
-            <div className="p-5 rounded-xl bg-gradient-to-br from-[#171A23] to-[#12141D] border border-white/[0.08] text-center space-y-4">
-              <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-[#F4F5FA]">
+            <div className="p-6 rounded-xl bg-[#212121] border border-white/10 text-center space-y-4">
+              <div className="w-12 h-12 rounded-full bg-white/10 border border-white/15 flex items-center justify-center mx-auto text-[#f1f1f1]">
                 <GoogleIcon className="w-6 h-6" />
               </div>
               <div className="max-w-md mx-auto">
-                <h3 className="text-sm font-bold text-[#F4F5FA] font-display">
+                <h3 className="text-sm font-bold text-[#f1f1f1]">
                   Connect Your Google Account
                 </h3>
-                <p className="mt-1 text-xs text-[#8E95A5] leading-relaxed">
-                  Sign in once to let ReWatch Everywhere read your YouTube Liked Videos (`LL`) and private playlists. We never modify your account or store passwords.
+                <p className="mt-1 text-xs text-[#aaaaaa] leading-relaxed">
+                  Sign in once to let ReWatch Everywhere read your YouTube Liked Videos and playlists.
                 </p>
               </div>
 
@@ -258,7 +258,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                 <button
                   onClick={handleGoogleSignIn}
                   disabled={isSigningIn}
-                  className="btn-primary w-full max-w-xs mx-auto py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2.5 shadow-md disabled:opacity-50"
+                  className="btn-primary w-full max-w-xs mx-auto py-2.5 px-4 text-xs font-bold flex items-center justify-center gap-2.5 shadow-md disabled:opacity-50"
                 >
                   {isSigningIn ? (
                     <>
@@ -274,7 +274,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                 </button>
               </div>
 
-              <div className="flex items-center justify-center gap-2 text-[10px] text-[#5E6573] font-mono">
+              <div className="flex items-center justify-center gap-2 text-[10px] text-[#717171] font-mono">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Read-only YouTube permission (`youtube.readonly`)</span>
               </div>
@@ -285,17 +285,17 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
           {providerToken && (
             <div className="space-y-4 pt-1">
               {/* Liked Videos Sync Action */}
-              <div className="p-4 rounded-xl bg-[#141722] border border-white/[0.07] flex items-center justify-between gap-4">
+              <div className="p-4 rounded-xl bg-[#212121] border border-white/10 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400">
                     <Heart className="w-4 h-4 fill-rose-400" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-[#F4F5FA]">
+                    <h4 className="text-xs font-bold text-[#f1f1f1]">
                       Liked Videos (`LL`)
                     </h4>
-                    <p className="text-[11px] text-[#8E95A5]">
-                      All videos you ever clicked Like on in YouTube
+                    <p className="text-[11px] text-[#aaaaaa]">
+                      All videos you liked on YouTube
                     </p>
                   </div>
                 </div>
@@ -303,7 +303,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                 <button
                   onClick={() => handleSyncLikedVideos(providerToken)}
                   disabled={syncingPlaylistId !== null}
-                  className="btn-primary px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
+                  className="btn-primary px-4 py-1.5 text-xs font-bold flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {syncingPlaylistId === 'LL' ? (
                     <>
@@ -322,15 +322,15 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
               {/* Personal Playlists Section */}
               <div>
                 <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[11px] font-mono uppercase text-[#8E95A5] font-semibold tracking-wider flex items-center gap-1.5">
-                    <ListMusic className="w-3.5 h-3.5 text-[#8B7CFF]" />
+                  <span className="text-[11px] font-mono uppercase text-[#aaaaaa] font-semibold tracking-wider flex items-center gap-1.5">
+                    <ListMusic className="w-3.5 h-3.5 text-white" />
                     <span>YOUR YOUTUBE PLAYLISTS</span>
                   </span>
                   {playlists.length > 0 && (
                     <button
                       onClick={() => loadPlaylists(providerToken)}
                       disabled={isLoadingPlaylists}
-                      className="text-[11px] text-[#8B7CFF] hover:underline flex items-center gap-1"
+                      className="text-[11px] text-zinc-300 hover:text-white hover:underline flex items-center gap-1"
                     >
                       <RefreshCw className={`w-3 h-3 ${isLoadingPlaylists ? 'animate-spin' : ''}`} />
                       <span>Refresh</span>
@@ -339,8 +339,8 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                 </div>
 
                 {isLoadingPlaylists ? (
-                  <div className="py-8 text-center text-xs text-[#8E95A5] flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin text-[#8B7CFF]" />
+                  <div className="py-8 text-center text-xs text-[#aaaaaa] flex items-center justify-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
                     <span>Fetching playlists from YouTube...</span>
                   </div>
                 ) : playlists.length > 0 ? (
@@ -348,25 +348,25 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                     {playlists.map((pl) => (
                       <div
                         key={pl.id}
-                        className="p-3 rounded-lg bg-[#141722] hover:bg-[#171A28] border border-white/[0.06] flex items-center justify-between gap-3 transition-colors"
+                        className="p-3 rounded-xl bg-[#212121] hover:bg-[#282828] border border-white/10 flex items-center justify-between gap-3 transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           {pl.thumbnail ? (
                             <img
                               src={pl.thumbnail}
                               alt=""
-                              className="w-10 h-7 object-cover rounded bg-black flex-shrink-0"
+                              className="w-10 h-7 object-cover rounded bg-black shrink-0"
                             />
                           ) : (
-                            <div className="w-10 h-7 rounded bg-white/5 flex items-center justify-center text-[#5E6573] flex-shrink-0">
+                            <div className="w-10 h-7 rounded bg-white/5 flex items-center justify-center text-zinc-500 shrink-0">
                               <ListMusic className="w-3.5 h-3.5" />
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="text-xs font-semibold text-[#F4F5FA] truncate">
+                            <p className="text-xs font-semibold text-[#f1f1f1] truncate">
                               {pl.title}
                             </p>
-                            <p className="text-[10px] text-[#8E95A5] font-mono">
+                            <p className="text-[10px] text-[#aaaaaa] font-mono">
                               {pl.itemCount} videos
                             </p>
                           </div>
@@ -375,7 +375,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                         <button
                           onClick={() => handleSyncPlaylist(pl)}
                           disabled={syncingPlaylistId !== null}
-                          className="btn-secondary px-3 py-1 rounded text-xs font-semibold flex items-center gap-1 disabled:opacity-50"
+                          className="btn-secondary px-3.5 py-1 text-xs font-semibold flex items-center gap-1 disabled:opacity-50"
                         >
                           {syncingPlaylistId === pl.id ? (
                             <RefreshCw className="w-3 h-3 animate-spin" />
@@ -387,8 +387,8 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                     ))}
                   </div>
                 ) : (
-                  <div className="py-6 text-center text-xs text-[#5E6573] p-4 rounded-xl bg-[#141722] border border-white/[0.06]">
-                    No personal playlists found on this YouTube account.
+                  <div className="py-6 text-center text-xs text-[#717171] p-4 rounded-xl bg-[#212121] border border-white/10">
+                    No playlists found on this YouTube account.
                   </div>
                 )}
               </div>

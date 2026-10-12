@@ -4,11 +4,11 @@ import {
   Link2,
   Upload,
   FileJson,
-  Sparkles,
   Check,
   AlertCircle,
   Radio,
-  Loader2
+  Loader2,
+  Film
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { VideoItem } from '../types';
@@ -82,7 +82,7 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
 
     onAddVideo(newVideo);
     confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
-    success('Video added to vault', newVideo.title);
+    success('Video added', newVideo.title);
 
     setUrl('');
     setTitle('');
@@ -112,7 +112,7 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
         onBulkAdd(items);
         setJsonSuccessCount(items.length);
         confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
-        success('Instagram backup imported', `${items.length} clips added to vault.`);
+        success('Instagram backup imported', `${items.length} clips added.`);
       } catch (err: any) {
         const errMsg = err.message || 'Error parsing file.';
         setJsonError(errMsg);
@@ -124,40 +124,40 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-2xl p-4 animate-in fade-in">
-      <div className="relative w-full max-w-lg rounded-2xl bg-[#11131A] border border-white/[0.08] shadow-[0_24px_60px_rgba(0,0,0,0.8)] overflow-hidden">
+      <div className="relative w-full max-w-lg rounded-2xl bg-[#181818] border border-white/10 shadow-[0_24px_60px_rgba(0,0,0,0.8)] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.07] bg-[#141722]">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/10 bg-[#212121]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#8B7CFF]/15 border border-[#8B7CFF]/30 flex items-center justify-center text-[#8B7CFF]">
-              <Sparkles className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/15 flex items-center justify-center text-white">
+              <Film className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-[#F4F5FA] font-display">
-                Curate Video to Sanctuary
+              <h2 className="text-sm sm:text-base font-bold text-[#f1f1f1]">
+                Add Video to Sanctuary
               </h2>
-              <p className="text-[11px] text-[#8E95A5]">
-                Save without algorithmic recommendations or comments
+              <p className="text-[11px] text-[#aaaaaa]">
+                Paste any YouTube, Instagram, or Web video link
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors"
+            className="p-1.5 rounded-lg text-[#aaaaaa] hover:text-[#f1f1f1] hover:bg-white/10 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Segmented Switcher */}
-        <div className="px-6 pt-4 pb-2 border-b border-white/[0.06] bg-[#11131A]">
-          <div className="flex items-center p-1 rounded-xl bg-[#171A23] border border-white/[0.06]">
+        <div className="px-6 pt-4 pb-2 border-b border-white/10 bg-[#181818]">
+          <div className="flex items-center p-1 rounded-xl bg-[#212121] border border-white/10">
             <button
               onClick={() => setActiveTab('url')}
               className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'url'
-                  ? 'bg-[#1E222E] text-[#F4F5FA] shadow-sm'
-                  : 'text-[#8E95A5] hover:text-[#F4F5FA]'
+                  ? 'bg-white/15 text-[#f1f1f1] shadow-sm'
+                  : 'text-[#aaaaaa] hover:text-[#f1f1f1]'
               }`}
             >
               <Link2 className="w-3.5 h-3.5" />
@@ -168,8 +168,8 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
               onClick={() => setActiveTab('json')}
               className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'json'
-                  ? 'bg-[#1E222E] text-[#F4F5FA] shadow-sm'
-                  : 'text-[#8E95A5] hover:text-[#F4F5FA]'
+                  ? 'bg-white/15 text-[#f1f1f1] shadow-sm'
+                  : 'text-[#aaaaaa] hover:text-[#f1f1f1]'
               }`}
             >
               <FileJson className="w-3.5 h-3.5" />
@@ -180,8 +180,8 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
               onClick={() => setActiveTab('extension')}
               className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'extension'
-                  ? 'bg-[#1E222E] text-[#F4F5FA] shadow-sm'
-                  : 'text-[#8E95A5] hover:text-[#F4F5FA]'
+                  ? 'bg-white/15 text-[#f1f1f1] shadow-sm'
+                  : 'text-[#aaaaaa] hover:text-[#f1f1f1]'
               }`}
             >
               <Radio className="w-3.5 h-3.5" />
@@ -196,8 +196,8 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
           {activeTab === 'url' && (
             <form onSubmit={handleSubmitUrl} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#F4F5FA] mb-1.5">
-                  Video URL <span className="text-[#8B7CFF]">*</span>
+                <label className="block text-xs font-semibold text-[#f1f1f1] mb-1.5">
+                  Video URL <span className="text-[#ff0000]">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -207,10 +207,10 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
                     onChange={(e) => setUrl(e.target.value)}
                     onBlur={handleUrlBlur}
                     placeholder="https://www.youtube.com/watch?v=... or instagram.com/reel/..."
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#171A23] border border-white/[0.08] text-xs text-[#F4F5FA] placeholder-[#5E6573] focus:outline-none focus:border-[#8B7CFF]/60 focus:ring-1 focus:ring-[#8B7CFF]/30 transition-all"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#212121] border border-white/10 text-xs text-[#f1f1f1] placeholder-[#717171] focus:outline-none focus:border-white/30 transition-all"
                   />
                   {isFetchingMeta && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[11px] text-[#8B7CFF]">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-[11px] text-zinc-300">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       <span>Fetching info...</span>
                     </div>
@@ -220,20 +220,20 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-[#8E95A5] mb-1.5">
+                  <label className="block text-xs font-semibold text-[#aaaaaa] mb-1.5">
                     Custom Title
                   </label>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Auto-detected if left empty"
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#171A23] border border-white/[0.08] text-xs text-[#F4F5FA] placeholder-[#5E6573] focus:outline-none focus:border-[#8B7CFF]/60"
+                    placeholder="Auto-detected if empty"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#212121] border border-white/10 text-xs text-[#f1f1f1] placeholder-[#717171] focus:outline-none focus:border-white/30"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#8E95A5] mb-1.5">
+                  <label className="block text-xs font-semibold text-[#aaaaaa] mb-1.5">
                     Creator / Channel
                   </label>
                   <input
@@ -241,30 +241,30 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
                     value={channel}
                     onChange={(e) => setChannel(e.target.value)}
                     placeholder="e.g. Veritasium, Kurzgesagt"
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#171A23] border border-white/[0.08] text-xs text-[#F4F5FA] placeholder-[#5E6573] focus:outline-none focus:border-[#8B7CFF]/60"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#212121] border border-white/10 text-xs text-[#f1f1f1] placeholder-[#717171] focus:outline-none focus:border-white/30"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#8E95A5] mb-1.5">
-                  Personal Reflection or Note (Optional)
+                <label className="block text-xs font-semibold text-[#aaaaaa] mb-1.5">
+                  Personal Note (Optional)
                 </label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Why did you save this?"
-                  className="w-full px-3.5 py-2 rounded-xl bg-[#171A23] border border-white/[0.08] text-xs text-[#F4F5FA] placeholder-[#5E6573] focus:outline-none focus:border-[#8B7CFF]/60"
+                  className="w-full px-3.5 py-2 rounded-xl bg-[#212121] border border-white/10 text-xs text-[#f1f1f1] placeholder-[#717171] focus:outline-none focus:border-white/30"
                 />
               </div>
 
               <div className="pt-2">
                 <button
                   type="submit"
-                  className="btn-primary w-full py-2.5 rounded-xl text-xs font-bold"
+                  className="btn-primary w-full py-2.5 text-xs font-bold"
                 >
-                  Save to Sanctuary
+                  Save to Library
                 </button>
               </div>
             </form>
@@ -273,23 +273,23 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
           {/* TAB 2: INSTAGRAM JSON BACKUP */}
           {activeTab === 'json' && (
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-[#171A23] border border-white/[0.07] text-xs text-[#8E95A5] space-y-2">
-                <p className="font-semibold text-[#F4F5FA]">
+              <div className="p-4 rounded-xl bg-[#212121] border border-white/10 text-xs text-[#aaaaaa] space-y-2">
+                <p className="font-semibold text-[#f1f1f1]">
                   Bulk Import Saved Instagram Reels:
                 </p>
-                <ol className="list-decimal list-inside space-y-1 text-[11px] text-[#8E95A5]">
+                <ol className="list-decimal list-inside space-y-1 text-[11px] text-[#aaaaaa]">
                   <li>Open Instagram: Settings → Your Activity → Download your information.</li>
                   <li>Select JSON format and check "Saved Posts".</li>
-                  <li>Extract the downloaded zip and drop <code className="text-[#8B7CFF]">saved_posts.json</code> below.</li>
+                  <li>Extract the downloaded zip and drop <code className="text-white">saved_posts.json</code> below.</li>
                 </ol>
               </div>
 
-              <label className="border-2 border-dashed border-white/15 hover:border-[#8B7CFF]/50 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors bg-[#141722] hover:bg-[#171A28]">
-                <Upload className="w-8 h-8 text-[#8B7CFF] mb-2 animate-bounce" />
-                <span className="text-xs font-bold text-[#F4F5FA]">
+              <label className="border-2 border-dashed border-white/15 hover:border-white/30 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-colors bg-[#212121] hover:bg-[#282828]">
+                <Upload className="w-8 h-8 text-white mb-2" />
+                <span className="text-xs font-bold text-[#f1f1f1]">
                   Click to select saved_posts.json
                 </span>
-                <span className="text-[10px] text-[#5E6573] mt-1">
+                <span className="text-[10px] text-[#717171] mt-1">
                   Supports official Instagram data export files
                 </span>
                 <input
@@ -303,7 +303,7 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
               {jsonSuccessCount !== null && (
                 <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
                   <Check className="w-4 h-4" />
-                  <span>Successfully ingested {jsonSuccessCount} reels!</span>
+                  <span>Successfully imported {jsonSuccessCount} reels!</span>
                 </div>
               )}
 
@@ -318,20 +318,20 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
 
           {/* TAB 3: CHROME EXTENSION GUIDE */}
           {activeTab === 'extension' && (
-            <div className="space-y-4 text-xs text-[#8E95A5]">
-              <div className="p-4 rounded-xl bg-[#171A23] border border-white/[0.07] space-y-2.5">
-                <div className="flex items-center gap-2 text-[#F4F5FA] font-bold">
+            <div className="space-y-4 text-xs text-[#aaaaaa]">
+              <div className="p-4 rounded-xl bg-[#212121] border border-white/10 space-y-2.5">
+                <div className="flex items-center gap-2 text-[#f1f1f1] font-bold">
                   <Radio className="w-4 h-4 text-emerald-400" />
                   <span>ReWatch Everywhere Chrome Extension Bridge</span>
                 </div>
                 <p className="text-[11px] leading-relaxed">
-                  Save Instagram Reels, YouTube videos, and any web video directly in 1 click while browsing.
+                  Save Instagram Reels, YouTube videos, and web clips directly in 1 click while browsing.
                 </p>
-                <div className="p-2.5 rounded-lg bg-[#08090D] border border-white/5 font-mono text-[10px] text-[#8B7CFF]">
+                <div className="p-2.5 rounded-lg bg-[#121212] border border-white/10 font-mono text-[10px] text-zinc-300">
                   C:\Users\UJJWAL KUMAR\.gemini\antigravity\scratch\zenvault\extension
                 </div>
                 <ol className="list-decimal list-inside space-y-1 text-[11px]">
-                  <li>Open <code className="text-[#F4F5FA]">chrome://extensions</code> in Chrome.</li>
+                  <li>Open <code className="text-[#f1f1f1]">chrome://extensions</code> in Chrome.</li>
                   <li>Enable <strong>Developer mode</strong>.</li>
                   <li>Click <strong>Load unpacked</strong> and select the directory above.</li>
                   <li>A floating "⚡ Beam to ReWatch Everywhere" button will appear on all reels!</li>

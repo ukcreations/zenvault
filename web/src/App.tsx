@@ -251,7 +251,7 @@ const MainApp: React.FC = () => {
   const totalWatchLater = videos.filter(v => v.isWatchLater).length;
 
   return (
-    <div className="min-h-screen bg-[#08090D] text-[#F4F5FA] flex flex-col relative selection:bg-[#8B7CFF] selection:text-white">
+    <div className="min-h-screen bg-[#0f0f0f] text-[#f1f1f1] flex flex-col relative selection:bg-white/25 selection:text-white">
       {/* Sidebar Navigation */}
       <Sidebar
         currentView={currentView}
@@ -293,6 +293,9 @@ const MainApp: React.FC = () => {
               onOpenAddModal={() => setIsAddModalOpen(true)}
               onOpenYouTubeSync={() => setIsYTSyncOpen(true)}
               onPlayVideo={(v) => setActiveVideo(v)}
+              onToggleLike={handleToggleLike}
+              onToggleWatchLater={handleToggleWatchLater}
+              onDelete={handleDelete}
             />
           ) : (
             <div className="space-y-6 animate-in fade-in duration-200">
@@ -307,7 +310,7 @@ const MainApp: React.FC = () => {
               {/* Video Collection (Grid or List View) */}
               {filteredVideos.length > 0 ? (
                 viewMode === 'grid' ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
                     {filteredVideos.map((video) => (
                       <VideoCard
                         key={video.id}
@@ -320,7 +323,7 @@ const MainApp: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="space-y-2.5">
+                  <div className="space-y-2">
                     {filteredVideos.map((video) => (
                       <VideoRow
                         key={video.id}
@@ -335,17 +338,17 @@ const MainApp: React.FC = () => {
                 )
               ) : (
                 /* Empty filtered view */
-                <div className="py-20 px-6 rounded-2xl bg-[#11131A] border border-white/[0.07] text-center flex flex-col items-center justify-center">
-                  <div className="w-14 h-14 rounded-2xl bg-[#8B7CFF]/10 border border-[#8B7CFF]/20 flex items-center justify-center text-[#8B7CFF] mb-4">
+                <div className="py-20 px-6 rounded-2xl bg-[#181818] border border-white/10 text-center flex flex-col items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-300 mb-4">
                     <Compass className="w-6 h-6 animate-pulse" />
                   </div>
-                  <h3 className="text-base font-bold text-[#F4F5FA] font-display mb-1">
+                  <h3 className="text-base font-bold text-[#f1f1f1] mb-1">
                     No videos match this filter
                   </h3>
-                  <p className="text-xs text-[#8E95A5] max-w-sm mb-6 leading-relaxed">
+                  <p className="text-xs text-[#aaaaaa] max-w-sm mb-6 leading-relaxed">
                     {searchQuery
-                      ? `No stashes found matching "${searchQuery}". Try adjusting your search query.`
-                      : 'No videos found in this channel yet.'}
+                      ? `No videos found matching "${searchQuery}". Try adjusting your search query.`
+                      : 'No videos found in this category yet.'}
                   </p>
                   <div className="flex items-center gap-3">
                     <button
@@ -353,13 +356,13 @@ const MainApp: React.FC = () => {
                         setSelectedPlatform('all');
                         setSearchQuery('');
                       }}
-                      className="btn-secondary px-4 py-2 rounded-xl text-xs font-semibold"
+                      className="btn-secondary px-4 py-2 text-xs font-semibold"
                     >
                       Reset Filter
                     </button>
                     <button
                       onClick={() => setIsAddModalOpen(true)}
-                      className="btn-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
+                      className="btn-primary px-4 py-2 text-xs font-bold flex items-center gap-2"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add Video</span>

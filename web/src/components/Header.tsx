@@ -52,60 +52,58 @@ export const Header: React.FC<HeaderProps> = ({
       case 'dashboard':
         return 'Dashboard';
       case 'liked':
-        return 'Liked Stashes';
+        return 'Liked Videos';
       case 'watch-later':
         return 'Watch Later';
       case 'all':
       default:
-        return 'Video Library';
+        return 'Library';
     }
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-[#08090D]/80 backdrop-blur-xl border-b border-white/[0.07] px-4 sm:px-6 flex items-center justify-between gap-4 transition-all">
-      {/* Left: Mobile Menu & Breadcrumbs */}
+    <header className="sticky top-0 z-30 h-16 bg-[#0f0f0f]/85 backdrop-blur-xl border-b border-white/[0.08] px-4 sm:px-6 flex items-center justify-between gap-4 transition-all">
+      {/* Left: Mobile Menu & Current View Title */}
       <div className="flex items-center gap-3">
         <button
           onClick={onOpenMobileMenu}
-          className="lg:hidden p-2 rounded-lg text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05]"
+          className="lg:hidden p-2 rounded-lg text-[#aaaaaa] hover:text-[#f1f1f1] hover:bg-white/10"
           aria-label="Open menu"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-[#8E95A5] hidden sm:inline">ReWatch Everywhere</span>
-          <span className="text-[#5E6573] hidden sm:inline">/</span>
-          <span className="font-semibold text-[#F4F5FA] text-sm">
+          <span className="font-bold text-[#f1f1f1] text-sm tracking-tight">
             {getViewTitle()}
           </span>
-          <span className="text-[11px] font-mono text-[#8E95A5] px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/5 ml-1">
+          <span className="text-[11px] font-mono text-[#aaaaaa] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 ml-1">
             {filteredCount}
           </span>
         </div>
       </div>
 
-      {/* Center: Global Search Bar */}
-      <div className="flex-1 max-w-md mx-2 hidden md:block">
+      {/* Center: Global YouTube-style Search Pill */}
+      <div className="flex-1 max-w-lg mx-2 hidden md:block">
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8E95A5]" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#aaaaaa]" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search stashes, channels, notes..."
-            className="w-full pl-9 pr-14 py-2 rounded-lg bg-[#11131A] border border-white/[0.08] text-xs text-[#F4F5FA] placeholder-[#5E6573] focus:outline-none focus:border-[#8B7CFF]/50 focus:ring-1 focus:ring-[#8B7CFF]/30 transition-all"
+            placeholder="Search saved videos, channels, topics..."
+            className="w-full pl-10 pr-14 py-2 rounded-full bg-[#121212] border border-white/15 text-xs text-[#f1f1f1] placeholder-[#717171] focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-all shadow-inner"
           />
           {searchQuery ? (
             <button
               onClick={() => onSearchChange('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 text-[#8E95A5] hover:text-[#F4F5FA]"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 p-0.5 text-[#aaaaaa] hover:text-white"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           ) : (
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/[0.06] text-[#8E95A5] border border-white/5 pointer-events-none">
+            <kbd className="absolute right-3.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono bg-white/10 text-[#aaaaaa] border border-white/10 pointer-events-none">
               ⌘K
             </kbd>
           )}
@@ -115,14 +113,14 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Right: View Toggles & Actions */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Grid vs List View Mode Toggle */}
-        <div className="flex items-center p-0.5 rounded-lg bg-[#11131A] border border-white/[0.08]">
+        <div className="flex items-center p-0.5 rounded-lg bg-[#212121] border border-white/10">
           <button
             onClick={() => onToggleViewMode('grid')}
             title="Grid view"
             className={`p-1.5 rounded-md transition-all ${
               viewMode === 'grid'
-                ? 'bg-[#171A23] text-[#F4F5FA] shadow-sm'
-                : 'text-[#8E95A5] hover:text-[#F4F5FA]'
+                ? 'bg-white/15 text-[#f1f1f1] shadow-sm'
+                : 'text-[#aaaaaa] hover:text-[#f1f1f1]'
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
@@ -132,8 +130,8 @@ export const Header: React.FC<HeaderProps> = ({
             title="List view"
             className={`p-1.5 rounded-md transition-all ${
               viewMode === 'list'
-                ? 'bg-[#171A23] text-[#F4F5FA] shadow-sm'
-                : 'text-[#8E95A5] hover:text-[#F4F5FA]'
+                ? 'bg-white/15 text-[#f1f1f1] shadow-sm'
+                : 'text-[#aaaaaa] hover:text-[#f1f1f1]'
             }`}
           >
             <List className="w-3.5 h-3.5" />
@@ -143,17 +141,17 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Sync YouTube Button */}
         <button
           onClick={onOpenYouTubeSync}
-          className="btn-secondary hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold"
-          title="Synchronize YouTube liked videos and playlists"
+          className="btn-secondary hidden sm:flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold"
+          title="Synchronize YouTube liked videos"
         >
-          <YoutubeIcon className="w-3.5 h-3.5 text-red-400" />
-          <span>Sync</span>
+          <YoutubeIcon className="w-3.5 h-3.5 text-[#ff0000]" />
+          <span>Sync YouTube</span>
         </button>
 
-        {/* Add Media Primary Button */}
+        {/* Add Video Primary Button (Crisp White Pill) */}
         <button
           onClick={onOpenAddModal}
-          className="btn-primary flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold"
+          className="btn-primary flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold"
         >
           <Plus className="w-4 h-4" />
           <span>Add Video</span>

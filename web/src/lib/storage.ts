@@ -10,7 +10,12 @@ export function getSavedVideos(): VideoItem[] {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_CURATED_VIDEOS));
       return INITIAL_CURATED_VIDEOS;
     }
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_CURATED_VIDEOS));
+      return INITIAL_CURATED_VIDEOS;
+    }
+    return parsed;
   } catch (err) {
     console.error('Failed to load videos from storage:', err);
     return INITIAL_CURATED_VIDEOS;
