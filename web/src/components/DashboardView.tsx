@@ -6,13 +6,11 @@ import {
   Sparkles,
   ArrowRight,
   Plus,
-  Play,
-  Volume2
+  Play
 } from 'lucide-react';
 import { YoutubeIcon } from './Icons';
-import type { VideoItem, SoundscapeType } from '../types';
+import type { VideoItem } from '../types';
 import type { GoogleUserProfile } from '../lib/googleAuth';
-import { zenAudio } from '../lib/audioSynthesizer';
 
 interface DashboardViewProps {
   videos: VideoItem[];
@@ -21,7 +19,6 @@ interface DashboardViewProps {
   onOpenAddModal: () => void;
   onOpenYouTubeSync: () => void;
   onPlayVideo: (video: VideoItem) => void;
-  activeSoundscape: SoundscapeType;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -31,9 +28,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenAddModal,
   onOpenYouTubeSync,
   onPlayVideo,
-  activeSoundscape,
 }) => {
-  // Determine greeting based on current local hour
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -59,7 +54,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         <div className="relative z-10 max-w-2xl">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[10px] font-mono uppercase tracking-wider text-[#8B7CFF] bg-[#8B7CFF]/10 border border-[#8B7CFF]/20 mb-3.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#8B7CFF] animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#8B7CFF]" />
             <span>DISTRACTION-FREE MEDIA SANCTUARY</span>
           </div>
 
@@ -74,10 +69,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
-              onClick={() => {
-                zenAudio.playHapticClick(700);
-                onOpenAddModal();
-              }}
+              onClick={onOpenAddModal}
               className="btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold"
             >
               <Plus className="w-4 h-4" />
@@ -85,10 +77,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
 
             <button
-              onClick={() => {
-                zenAudio.playHapticClick(650);
-                onOpenYouTubeSync();
-              }}
+              onClick={onOpenYouTubeSync}
               className="btn-secondary flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold"
             >
               <YoutubeIcon className="w-3.5 h-3.5 text-red-400" />
@@ -98,14 +87,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </div>
 
-      {/* KPI Stats Metrics (Real Data) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Stats Metrics (3 Balanced Columns) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Total Videos */}
         <div
-          onClick={() => {
-            zenAudio.playHapticClick(600, 0.02);
-            onSelectView('all');
-          }}
+          onClick={() => onSelectView('all')}
           className="p-5 rounded-xl bg-[#11131A] hover:bg-[#141722] border border-white/[0.07] hover:border-white/[0.12] cursor-pointer transition-all group"
         >
           <div className="flex items-center justify-between">
@@ -127,10 +113,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Liked Videos */}
         <div
-          onClick={() => {
-            zenAudio.playHapticClick(600, 0.02);
-            onSelectView('liked');
-          }}
+          onClick={() => onSelectView('liked')}
           className="p-5 rounded-xl bg-[#11131A] hover:bg-[#141722] border border-white/[0.07] hover:border-white/[0.12] cursor-pointer transition-all group"
         >
           <div className="flex items-center justify-between">
@@ -152,10 +135,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Watch Later */}
         <div
-          onClick={() => {
-            zenAudio.playHapticClick(600, 0.02);
-            onSelectView('watch-later');
-          }}
+          onClick={() => onSelectView('watch-later')}
           className="p-5 rounded-xl bg-[#11131A] hover:bg-[#141722] border border-white/[0.07] hover:border-white/[0.12] cursor-pointer transition-all group"
         >
           <div className="flex items-center justify-between">
@@ -172,27 +152,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
             <span className="text-xs text-[#8E95A5]">queued</span>
           </div>
-          <p className="mt-2 text-[11px] text-[#5E6573]">Ready for your next deep focus</p>
-        </div>
-
-        {/* Ambient Soundscape */}
-        <div className="p-5 rounded-xl bg-[#11131A] border border-white/[0.07] transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-mono uppercase text-[#8E95A5] tracking-wider font-semibold">
-              SOUND ENGINE
-            </span>
-            <div className="w-7 h-7 rounded-lg bg-[#8B7CFF]/10 flex items-center justify-center text-[#8B7CFF]">
-              <Volume2 className="w-3.5 h-3.5" />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-lg font-bold text-[#F4F5FA] font-display capitalize">
-              {activeSoundscape === 'off' ? 'Muted' : activeSoundscape}
-            </span>
-          </div>
-          <p className="mt-2 text-[11px] text-[#5E6573]">
-            {activeSoundscape === 'off' ? 'Zero background distractions' : 'Procedural sound synthesis active'}
-          </p>
+          <p className="mt-2 text-[11px] text-[#5E6573]">Ready for your next viewing session</p>
         </div>
       </div>
 
@@ -208,10 +168,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {videos.length > 0 && (
             <button
-              onClick={() => {
-                zenAudio.playHapticClick(600, 0.02);
-                onSelectView('all');
-              }}
+              onClick={() => onSelectView('all')}
               className="flex items-center gap-1.5 text-xs font-semibold text-[#8B7CFF] hover:text-[#9D90FF] transition-colors"
             >
               <span>View full library</span>
@@ -225,10 +182,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {recentVideos.map((video) => (
               <div
                 key={video.id}
-                onClick={() => {
-                  zenAudio.playHapticClick(580);
-                  onPlayVideo(video);
-                }}
+                onClick={() => onPlayVideo(video)}
                 className="group relative flex flex-col rounded-xl bg-[#11131A] hover:bg-[#141722] border border-white/[0.07] hover:border-[#8B7CFF]/30 overflow-hidden cursor-pointer transition-all duration-300 shadow-sm"
               >
                 {/* 16:9 Thumbnail */}
@@ -279,8 +233,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </h3>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-white/[0.05] text-[10px] text-[#5E6573] font-mono">
-                    <span className="capitalize">{video.mood}</span>
+                  <div className="flex items-center justify-end pt-2 border-t border-white/[0.05] text-[10px] text-[#5E6573] font-mono">
                     <span>{new Date(video.addedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                   </div>
                 </div>
@@ -297,24 +250,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Your Sanctuary is Peaceful & Empty
             </h3>
             <p className="text-xs text-[#8E95A5] max-w-sm mb-6 leading-relaxed">
-              Start by syncing your YouTube Liked videos or pasting URLs of reels, talks, or lofi streams you wish to keep.
+              Start by syncing your YouTube Liked videos or pasting URLs of reels, talks, or videos you wish to keep.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <button
-                onClick={() => {
-                  zenAudio.playHapticClick(700);
-                  onOpenYouTubeSync();
-                }}
+                onClick={onOpenYouTubeSync}
                 className="btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold"
               >
                 <YoutubeIcon className="w-3.5 h-3.5" />
                 <span>Sync YouTube Liked Videos</span>
               </button>
               <button
-                onClick={() => {
-                  zenAudio.playHapticClick(650);
-                  onOpenAddModal();
-                }}
+                onClick={onOpenAddModal}
                 className="btn-secondary flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold"
               >
                 <Plus className="w-3.5 h-3.5" />

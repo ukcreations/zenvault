@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { YoutubeIcon, InstagramIcon, TikTokIcon } from './Icons';
 import type { VideoItem } from '../types';
-import { zenAudio } from '../lib/audioSynthesizer';
 import { useToast } from './Toast';
 
 interface VideoCardProps {
@@ -35,7 +34,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const { success } = useToast();
 
-  // Close dropdown menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -53,7 +51,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     navigator.clipboard.writeText(video.url);
     setCopied(true);
     success('Link copied to clipboard');
-    zenAudio.playHapticClick(850, 0.04);
     setTimeout(() => {
       setCopied(false);
       setMenuOpen(false);
@@ -64,7 +61,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     e.stopPropagation();
     setMenuOpen(false);
     if (confirm(`Remove "${video.title}" from your ZenVault?`)) {
-      zenAudio.playHapticClick(350);
       onDelete(video.id);
       success('Video removed from sanctuary');
     }
@@ -92,10 +88,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
     <div className="group relative flex flex-col zen-card">
       {/* 16:9 Thumbnail Container */}
       <div
-        onClick={() => {
-          zenAudio.playHapticClick(580);
-          onPlay(video);
-        }}
+        onClick={() => onPlay(video)}
         className="relative aspect-video w-full bg-[#08090D] overflow-hidden cursor-pointer"
       >
         {video.thumbnail ? (
@@ -149,10 +142,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           </div>
 
           <h3
-            onClick={() => {
-              zenAudio.playHapticClick(580);
-              onPlay(video);
-            }}
+            onClick={() => onPlay(video)}
             className="text-xs sm:text-sm font-semibold text-[#F4F5FA] line-clamp-2 hover:text-[#8B7CFF] cursor-pointer transition-colors leading-snug"
             title={video.title}
           >
@@ -168,19 +158,15 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
         {/* Card Footer Toolbar */}
         <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-          {/* Mood Pill */}
-          <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-white/[0.04] text-[#8E95A5] border border-white/5">
-            {video.mood}
+          <span className="text-[10px] font-mono text-[#5E6573]">
+            {video.platform.toUpperCase()}
           </span>
 
           {/* Action Icons */}
           <div className="flex items-center gap-1">
             {/* Like Button */}
             <button
-              onClick={() => {
-                zenAudio.playHapticClick(800);
-                onToggleLike(video.id);
-              }}
+              onClick={() => onToggleLike(video.id)}
               title={video.isLiked ? 'Unlike' : 'Like'}
               className={`p-1.5 rounded-lg transition-colors ${
                 video.isLiked
@@ -193,10 +179,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
             {/* Watch Later Button */}
             <button
-              onClick={() => {
-                zenAudio.playHapticClick(600);
-                onToggleWatchLater(video.id);
-              }}
+              onClick={() => onToggleWatchLater(video.id)}
               title={video.isWatchLater ? 'Remove from Watch Later' : 'Watch Later'}
               className={`p-1.5 rounded-lg transition-colors ${
                 video.isWatchLater
@@ -212,7 +195,6 @@ export const VideoCard: React.FC<VideoCardProps> = ({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  zenAudio.playHapticClick(500, 0.02);
                   setMenuOpen(!menuOpen);
                 }}
                 title="More options"

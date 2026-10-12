@@ -1,6 +1,6 @@
 export type Platform = 'youtube' | 'instagram' | 'tiktok' | 'reddit' | 'vimeo' | 'web';
 
-export type MoodType = 'all' | 'chill' | 'deep-focus' | 'sleep' | 'comedy' | 'learn' | 'inspiration';
+export type MoodType = string;
 
 export interface VideoItem {
   id: string;
@@ -10,7 +10,7 @@ export interface VideoItem {
   thumbnail?: string;
   duration?: string;
   channel?: string;
-  mood: MoodType;
+  mood?: string;
   addedAt: string;
   isLiked?: boolean;
   isWatchLater?: boolean;
@@ -18,7 +18,7 @@ export interface VideoItem {
   source?: 'youtube-sync' | 'extension' | 'insta-json' | 'manual' | 'curated';
 }
 
-export type SoundscapeType = 'rain' | 'fireplace' | 'lofi' | 'brown-noise' | 'forest' | 'off';
+export type SoundscapeType = 'off';
 
 export interface YouTubeSyncConfig {
   apiKey?: string;

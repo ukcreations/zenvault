@@ -24,7 +24,6 @@ import {
   PENDING_YT_SYNC_KEY,
   type YouTubePlaylistMeta
 } from '../lib/googleAuth';
-import { zenAudio } from '../lib/audioSynthesizer';
 import { useToast } from './Toast';
 
 interface YouTubeSyncModalProps {
@@ -116,7 +115,6 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
       }
       onSyncComplete(videos);
       confetti({ particleCount: 50, spread: 60 });
-      zenAudio.playHapticClick(900, 0.1);
       const msg = `Synced ${videos.length} Liked videos into your sanctuary!`;
       setSuccessMsg(msg);
       success('YouTube sync complete', `${videos.length} videos added.`);
@@ -143,7 +141,6 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
       }
       onSyncComplete(videos);
       confetti({ particleCount: 40, spread: 50 });
-      zenAudio.playHapticClick(850, 0.08);
       const msg = `Synced ${videos.length} videos from "${playlist.title}"!`;
       setSuccessMsg(msg);
       success('Playlist imported', msg);
@@ -160,7 +157,6 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
     await signOutGoogle();
     setPlaylists([]);
     setSuccessMsg(null);
-    zenAudio.playHapticClick(450, 0.04);
   };
 
   return (
@@ -183,10 +179,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
           </div>
 
           <button
-            onClick={() => {
-              zenAudio.playHapticClick();
-              onClose();
-            }}
+            onClick={onClose}
             className="p-1.5 rounded-lg text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors"
           >
             <X className="w-4 h-4" />

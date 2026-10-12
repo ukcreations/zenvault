@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { YoutubeIcon } from './Icons';
 import type { NavView } from './Sidebar';
-import { zenAudio } from '../lib/audioSynthesizer';
 
 interface HeaderProps {
   currentView: NavView;
@@ -118,10 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Grid vs List View Mode Toggle */}
         <div className="flex items-center p-0.5 rounded-lg bg-[#11131A] border border-white/[0.08]">
           <button
-            onClick={() => {
-              zenAudio.playHapticClick(600, 0.02);
-              onToggleViewMode('grid');
-            }}
+            onClick={() => onToggleViewMode('grid')}
             title="Grid view"
             className={`p-1.5 rounded-md transition-all ${
               viewMode === 'grid'
@@ -132,10 +128,7 @@ export const Header: React.FC<HeaderProps> = ({
             <LayoutGrid className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={() => {
-              zenAudio.playHapticClick(600, 0.02);
-              onToggleViewMode('list');
-            }}
+            onClick={() => onToggleViewMode('list')}
             title="List view"
             className={`p-1.5 rounded-md transition-all ${
               viewMode === 'list'
@@ -149,10 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Sync YouTube Button */}
         <button
-          onClick={() => {
-            zenAudio.playHapticClick(700);
-            onOpenYouTubeSync();
-          }}
+          onClick={onOpenYouTubeSync}
           className="btn-secondary hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold"
           title="Synchronize YouTube liked videos and playlists"
         >
@@ -162,10 +152,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Add Media Primary Button */}
         <button
-          onClick={() => {
-            zenAudio.playHapticClick(750);
-            onOpenAddModal();
-          }}
+          onClick={onOpenAddModal}
           className="btn-primary flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold"
         >
           <Plus className="w-4 h-4" />

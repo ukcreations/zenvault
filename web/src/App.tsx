@@ -4,7 +4,7 @@ import {
   Compass,
   Plus
 } from 'lucide-react';
-import type { VideoItem, MoodType, Platform, SoundscapeType } from './types';
+import type { VideoItem, Platform } from './types';
 import {
   getSavedVideos,
   addVideo,
@@ -23,7 +23,6 @@ import { ZenPlayer } from './components/ZenPlayer';
 import { AddMediaModal } from './components/AddMediaModal';
 import { YouTubeSyncModal } from './components/YouTubeSyncModal';
 import { ToastProvider, useToast } from './components/Toast';
-import { zenAudio } from './lib/audioSynthesizer';
 import { toGoogleProfile, signOutGoogle, PENDING_YT_SYNC_KEY } from './lib/googleAuth';
 import { supabase, isSupabaseConfigured } from './lib/supabaseClient';
 import { pullCloudVideos, pushVideo, pushVideos, deleteCloudVideo } from './lib/cloudSync';
@@ -34,10 +33,8 @@ const MainApp: React.FC = () => {
   const [currentView, setCurrentView] = useState<NavView>('dashboard');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
-  const [selectedMood, setSelectedMood] = useState<MoodType>('all');
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeSoundscape, setActiveSoundscape] = useState<SoundscapeType>('off');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Modals
@@ -144,7 +141,6 @@ const MainApp: React.FC = () => {
           saveVideosToStorage(updated);
           return updated;
         });
-        zenAudio.playHapticClick(900, 0.05);
         toastSuccess('Video beamed from extension', item.title);
       }
     };
@@ -214,7 +210,6 @@ const MainApp: React.FC = () => {
       .filter(v => {
         if (currentView === 'liked' && !v.isLiked) return false;
         if (currentView === 'watch-later' && !v.isWatchLater) return false;
-        if (selectedMood !== 'all' && v.mood !== selectedMood) return false;
         if (selectedPlatform !== 'all' && v.platform !== selectedPlatform) return false;
 
         if (searchQuery.trim()) {
@@ -228,7 +223,7 @@ const MainApp: React.FC = () => {
         return true;
       })
       .sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime());
-  }, [videos, currentView, selectedMood, selectedPlatform, searchQuery]);
+  }, [videos, currentView, selectedPlatform, searchQuery]);
 
   // Cinema Mode Playlist Navigation
   const activeVideoIndex = useMemo(() => {
@@ -261,15 +256,11 @@ const MainApp: React.FC = () => {
       <Sidebar
         currentView={currentView}
         onSelectView={setCurrentView}
-        selectedMood={selectedMood}
-        onSelectMood={setSelectedMood}
         totalCount={videos.length}
         likedCount={totalLiked}
         watchLaterCount={totalWatchLater}
         onOpenYouTubeSync={() => setIsYTSyncOpen(true)}
         onOpenAddModal={() => setIsAddModalOpen(true)}
-        activeSoundscape={activeSoundscape}
-        setActiveSoundscape={setActiveSoundscape}
         googleUser={googleUser}
         onSignOut={handleSignOut}
         extensionLinked={extensionLinked}
@@ -302,14 +293,11 @@ const MainApp: React.FC = () => {
               onOpenAddModal={() => setIsAddModalOpen(true)}
               onOpenYouTubeSync={() => setIsYTSyncOpen(true)}
               onPlayVideo={(v) => setActiveVideo(v)}
-              activeSoundscape={activeSoundscape}
             />
           ) : (
             <div className="space-y-6 animate-in fade-in duration-200">
-              {/* Mood & Platform Filter Controls */}
+              {/* Platform Filter Controls */}
               <MoodFilterBar
-                selectedMood={selectedMood}
-                onSelectMood={setSelectedMood}
                 selectedPlatform={selectedPlatform}
                 onSelectPlatform={setSelectedPlatform}
                 searchQuery={searchQuery}
@@ -356,26 +344,21 @@ const MainApp: React.FC = () => {
                   </h3>
                   <p className="text-xs text-[#8E95A5] max-w-sm mb-6 leading-relaxed">
                     {searchQuery
-                      ? `No stashes found matching "${searchQuery}". Try adjusting your keywords or clearing the filter.`
+                      ? `No stashes found matching "${searchQuery}". Try adjusting your search query.`
                       : 'No videos found in this channel yet.'}
                   </p>
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => {
-                        setSelectedMood('all');
                         setSelectedPlatform('all');
                         setSearchQuery('');
-                        zenAudio.playHapticClick(600);
                       }}
                       className="btn-secondary px-4 py-2 rounded-xl text-xs font-semibold"
                     >
-                      Reset Filters
+                      Reset Filter
                     </button>
                     <button
-                      onClick={() => {
-                        zenAudio.playHapticClick(700);
-                        setIsAddModalOpen(true);
-                      }}
+                      onClick={() => setIsAddModalOpen(true)}
                       className="btn-primary px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -397,8 +380,6 @@ const MainApp: React.FC = () => {
         onPrev={handlePrevVideo}
         onToggleLike={handleToggleLike}
         onToggleWatchLater={handleToggleWatchLater}
-        activeSoundscape={activeSoundscape}
-        setActiveSoundscape={setActiveSoundscape}
       />
 
       {/* Add Media Modal */}

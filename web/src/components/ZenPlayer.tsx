@@ -6,12 +6,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
-  Sparkles,
-  Volume2
+  Sparkles
 } from 'lucide-react';
-import type { VideoItem, SoundscapeType } from '../types';
+import type { VideoItem } from '../types';
 import { extractPlatformAndId } from '../lib/youtubeApi';
-import { zenAudio } from '../lib/audioSynthesizer';
 import { useToast } from './Toast';
 
 interface ZenPlayerProps {
@@ -21,8 +19,6 @@ interface ZenPlayerProps {
   onPrev?: () => void;
   onToggleLike: (id: string) => void;
   onToggleWatchLater: (id: string) => void;
-  activeSoundscape: SoundscapeType;
-  setActiveSoundscape: (sound: SoundscapeType) => void;
 }
 
 export const ZenPlayer: React.FC<ZenPlayerProps> = ({
@@ -32,8 +28,6 @@ export const ZenPlayer: React.FC<ZenPlayerProps> = ({
   onPrev,
   onToggleLike,
   onToggleWatchLater,
-  activeSoundscape,
-  setActiveSoundscape,
 }) => {
   const { success } = useToast();
 
@@ -88,10 +82,7 @@ export const ZenPlayer: React.FC<ZenPlayerProps> = ({
               <ExternalLink className="w-4 h-4" />
             </a>
             <button
-              onClick={() => {
-                zenAudio.playHapticClick();
-                onClose();
-              }}
+              onClick={onClose}
               className="p-2 rounded-lg text-[#8E95A5] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
               title="Close Cinema Mode (Esc)"
             >
@@ -150,12 +141,11 @@ export const ZenPlayer: React.FC<ZenPlayerProps> = ({
         </div>
 
         {/* Cinema Footer Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-white/[0.08] bg-[#11131A]/90 backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-3 px-5 py-3 border-t border-white/[0.08] bg-[#11131A]/90 backdrop-blur-xl">
           {/* Like & Watch Later */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
-                zenAudio.playHapticClick(800);
                 onToggleLike(video.id);
                 success(video.isLiked ? 'Removed from Liked' : 'Saved to Liked');
               }}
@@ -171,7 +161,6 @@ export const ZenPlayer: React.FC<ZenPlayerProps> = ({
 
             <button
               onClick={() => {
-                zenAudio.playHapticClick(600);
                 onToggleWatchLater(video.id);
                 success(video.isWatchLater ? 'Removed from Queue' : 'Added to Watch Later');
               }}
@@ -186,40 +175,11 @@ export const ZenPlayer: React.FC<ZenPlayerProps> = ({
             </button>
           </div>
 
-          {/* Soundscape presets */}
-          <div className="hidden sm:flex items-center gap-1.5 p-1 rounded-xl bg-[#171A23] border border-white/[0.06] text-[11px]">
-            <span className="text-[#8E95A5] px-2 flex items-center gap-1">
-              <Volume2 className="w-3 h-3 text-[#8B7CFF]" />
-              <span>Sound:</span>
-            </span>
-            {(['off', 'rain', 'fireplace', 'brown-noise'] as SoundscapeType[]).map((snd) => (
-              <button
-                key={snd}
-                onClick={() => {
-                  zenAudio.playHapticClick(600, 0.02);
-                  setActiveSoundscape(snd);
-                  if (snd === 'off') zenAudio.stopSoundscape();
-                  else zenAudio.startSoundscape(snd);
-                }}
-                className={`px-2.5 py-1 rounded-lg capitalize font-mono text-[10px] transition-all ${
-                  activeSoundscape === snd
-                    ? 'bg-[#8B7CFF] text-[#08090D] font-bold'
-                    : 'text-[#8E95A5] hover:text-[#F4F5FA]'
-                }`}
-              >
-                {snd}
-              </button>
-            ))}
-          </div>
-
           {/* Prev / Next controls */}
           <div className="flex items-center gap-1.5">
             {onPrev && (
               <button
-                onClick={() => {
-                  zenAudio.playHapticClick(650);
-                  onPrev();
-                }}
+                onClick={onPrev}
                 className="btn-secondary flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold"
                 title="Previous video (Left Arrow)"
               >
@@ -229,10 +189,7 @@ export const ZenPlayer: React.FC<ZenPlayerProps> = ({
             )}
             {onNext && (
               <button
-                onClick={() => {
-                  zenAudio.playHapticClick(700);
-                  onNext();
-                }}
+                onClick={onNext}
                 className="btn-primary flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-xs font-bold"
                 title="Next video (Right Arrow)"
               >

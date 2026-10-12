@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { YoutubeIcon, InstagramIcon, TikTokIcon } from './Icons';
 import type { VideoItem } from '../types';
-import { zenAudio } from '../lib/audioSynthesizer';
 import { useToast } from './Toast';
 
 interface VideoRowProps {
@@ -52,7 +51,6 @@ export const VideoRow: React.FC<VideoRowProps> = ({
     navigator.clipboard.writeText(video.url);
     setCopied(true);
     success('Link copied to clipboard');
-    zenAudio.playHapticClick(850, 0.04);
     setTimeout(() => {
       setCopied(false);
       setMenuOpen(false);
@@ -63,7 +61,6 @@ export const VideoRow: React.FC<VideoRowProps> = ({
     e.stopPropagation();
     setMenuOpen(false);
     if (confirm(`Remove "${video.title}" from your ZenVault?`)) {
-      zenAudio.playHapticClick(350);
       onDelete(video.id);
       success('Video removed from sanctuary');
     }
@@ -84,10 +81,7 @@ export const VideoRow: React.FC<VideoRowProps> = ({
 
   return (
     <div
-      onClick={() => {
-        zenAudio.playHapticClick(580);
-        onPlay(video);
-      }}
+      onClick={() => onPlay(video)}
       className="group flex items-center justify-between gap-4 p-3 rounded-xl bg-[#11131A] hover:bg-[#141722] border border-white/[0.07] hover:border-[#8B7CFF]/30 transition-all cursor-pointer"
     >
       {/* Left: Thumbnail & Title/Channel */}
@@ -137,95 +131,81 @@ export const VideoRow: React.FC<VideoRowProps> = ({
         </div>
       </div>
 
-      {/* Right: Badges & Actions */}
+      {/* Right: Actions */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex items-center gap-2 sm:gap-4 flex-shrink-0"
+        className="flex items-center gap-1 sm:gap-2 flex-shrink-0"
       >
-        {/* Mood Pill (Hidden on mobile) */}
-        <span className="hidden md:inline-flex px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-white/[0.04] text-[#8E95A5] border border-white/5">
-          {video.mood}
-        </span>
+        {/* Like */}
+        <button
+          onClick={() => onToggleLike(video.id)}
+          title={video.isLiked ? 'Unlike' : 'Like'}
+          className={`p-1.5 rounded-lg transition-colors ${
+            video.isLiked
+              ? 'text-rose-400 bg-rose-500/15'
+              : 'text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.06]'
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${video.isLiked ? 'fill-rose-400' : ''}`} />
+        </button>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-1">
-          {/* Like */}
+        {/* Watch Later */}
+        <button
+          onClick={() => onToggleWatchLater(video.id)}
+          title={video.isWatchLater ? 'Remove from Watch Later' : 'Watch Later'}
+          className={`p-1.5 rounded-lg transition-colors ${
+            video.isWatchLater
+              ? 'text-amber-400 bg-amber-500/15'
+              : 'text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.06]'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+        </button>
+
+        {/* More options menu */}
+        <div className="relative" ref={menuRef}>
           <button
-            onClick={() => {
-              zenAudio.playHapticClick(800);
-              onToggleLike(video.id);
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(!menuOpen);
             }}
-            title={video.isLiked ? 'Unlike' : 'Like'}
-            className={`p-1.5 rounded-lg transition-colors ${
-              video.isLiked
-                ? 'text-rose-400 bg-rose-500/15'
-                : 'text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.06]'
-            }`}
+            title="More options"
+            className="p-1.5 rounded-lg text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.06] transition-colors"
           >
-            <Heart className={`w-4 h-4 ${video.isLiked ? 'fill-rose-400' : ''}`} />
+            <MoreHorizontal className="w-4 h-4" />
           </button>
 
-          {/* Watch Later */}
-          <button
-            onClick={() => {
-              zenAudio.playHapticClick(600);
-              onToggleWatchLater(video.id);
-            }}
-            title={video.isWatchLater ? 'Remove from Watch Later' : 'Watch Later'}
-            className={`p-1.5 rounded-lg transition-colors ${
-              video.isWatchLater
-                ? 'text-amber-400 bg-amber-500/15'
-                : 'text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.06]'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-[#171A23] border border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.6)] py-1.5 z-20 animate-in fade-in zoom-in-95 duration-150">
+              <button
+                onClick={handleCopy}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors text-left"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copied ? 'Copied Link' : 'Copy Video URL'}</span>
+              </button>
 
-          {/* More options menu */}
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => {
-                zenAudio.playHapticClick(500, 0.02);
-                setMenuOpen(!menuOpen);
-              }}
-              title="More options"
-              className="p-1.5 rounded-lg text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.06] transition-colors"
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </button>
+              <a
+                href={video.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors text-left"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Open in new tab</span>
+              </a>
 
-            {menuOpen && (
-              <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-[#171A23] border border-white/10 shadow-[0_12px_30px_rgba(0,0,0,0.6)] py-1.5 z-20 animate-in fade-in zoom-in-95 duration-150">
-                <button
-                  onClick={handleCopy}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors text-left"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? 'Copied Link' : 'Copy Video URL'}</span>
-                </button>
+              <div className="my-1 border-t border-white/[0.06]" />
 
-                <a
-                  href={video.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors text-left"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open in new tab</span>
-                </a>
-
-                <div className="my-1 border-t border-white/[0.06]" />
-
-                <button
-                  onClick={handleDelete}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Remove from vault</span>
-                </button>
-              </div>
-            )}
-          </div>
+              <button
+                onClick={handleDelete}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Remove from vault</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

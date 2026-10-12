@@ -4,37 +4,23 @@ import {
   Film,
   Heart,
   Clock,
-  Compass,
-  Brain,
-  Moon,
-  BookOpen,
-  Laugh,
   Radio,
-  Sliders,
   LogOut,
-  Volume2,
-  VolumeX,
   X
 } from 'lucide-react';
 import { YoutubeIcon, GoogleIcon } from './Icons';
-import type { MoodType, SoundscapeType } from '../types';
 import type { GoogleUserProfile } from '../lib/googleAuth';
-import { zenAudio } from '../lib/audioSynthesizer';
 
 export type NavView = 'dashboard' | 'all' | 'liked' | 'watch-later';
 
 interface SidebarProps {
   currentView: NavView;
   onSelectView: (view: NavView) => void;
-  selectedMood: MoodType;
-  onSelectMood: (mood: MoodType) => void;
   totalCount: number;
   likedCount: number;
   watchLaterCount: number;
   onOpenYouTubeSync: () => void;
   onOpenAddModal: () => void;
-  activeSoundscape: SoundscapeType;
-  setActiveSoundscape: (sound: SoundscapeType) => void;
   googleUser: GoogleUserProfile | null;
   onSignOut: () => void;
   extensionLinked: boolean;
@@ -45,22 +31,16 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   onSelectView,
-  selectedMood,
-  onSelectMood,
   totalCount,
   likedCount,
   watchLaterCount,
   onOpenYouTubeSync,
-  activeSoundscape,
-  setActiveSoundscape,
   googleUser,
   onSignOut,
   extensionLinked,
   isOpenMobile,
   onCloseMobile,
 }) => {
-  const [soundVolume, setSoundVolume] = React.useState(0.35);
-
   const navItems = [
     {
       id: 'dashboard' as NavView,
@@ -89,31 +69,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       activeColor: 'text-amber-400',
     },
   ];
-
-  const moodItems: { id: MoodType; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: 'chill', label: 'Chill & Calm', icon: Compass },
-    { id: 'deep-focus', label: 'Deep Focus', icon: Brain },
-    { id: 'sleep', label: 'Sleep & Night', icon: Moon },
-    { id: 'learn', label: 'Learn & Wisdom', icon: BookOpen },
-    { id: 'comedy', label: 'Laughs & Joy', icon: Laugh },
-  ];
-
-  const handleSoundToggle = (sound: SoundscapeType) => {
-    zenAudio.playHapticClick(620, 0.04);
-    if (activeSoundscape === sound) {
-      setActiveSoundscape('off');
-      zenAudio.stopSoundscape();
-    } else {
-      setActiveSoundscape(sound);
-      zenAudio.startSoundscape(sound, soundVolume);
-    }
-  };
-
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseFloat(e.target.value);
-    setSoundVolume(val);
-    zenAudio.setVolume(val);
-  };
 
   return (
     <>
@@ -173,7 +128,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <button
                     key={item.id}
                     onClick={() => {
-                      zenAudio.playHapticClick(650, 0.03);
                       onSelectView(item.id);
                       onCloseMobile();
                     }}
@@ -208,57 +162,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </nav>
           </div>
 
-          {/* Mood Filters */}
-          <div>
-            <div className="px-3 mb-2 flex items-center justify-between">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#5E6573] font-semibold">
-                MOOD CHANNELS
-              </span>
-              {selectedMood !== 'all' && (
-                <button
-                  onClick={() => {
-                    zenAudio.playHapticClick(500);
-                    onSelectMood('all');
-                  }}
-                  className="text-[10px] text-[#8B7CFF] hover:underline"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <div className="space-y-0.5">
-              {moodItems.map((mood) => {
-                const isActive = selectedMood === mood.id;
-                const IconComp = mood.icon;
-                return (
-                  <button
-                    key={mood.id}
-                    onClick={() => {
-                      zenAudio.playHapticClick(600, 0.03);
-                      if (isActive) {
-                        onSelectMood('all');
-                      } else {
-                        onSelectMood(mood.id);
-                        if (currentView === 'dashboard') {
-                          onSelectView('all');
-                        }
-                      }
-                      onCloseMobile();
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs transition-all ${
-                      isActive
-                        ? 'bg-[#8B7CFF]/15 text-[#8B7CFF] font-semibold border border-[#8B7CFF]/30'
-                        : 'text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    <IconComp className="w-3.5 h-3.5" />
-                    <span>{mood.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {/* Sync & Integrations */}
           <div>
             <div className="px-3 mb-2 text-[10px] font-mono uppercase tracking-widest text-[#5E6573] font-semibold">
@@ -267,7 +170,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="space-y-1">
               <button
                 onClick={() => {
-                  zenAudio.playHapticClick(700);
                   onOpenYouTubeSync();
                   onCloseMobile();
                 }}
@@ -280,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     googleUser
-                      ? 'bg-emerald-400 animate-pulse shadow-[0_0_6px_#34d399]'
+                      ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]'
                       : 'bg-[#5E6573]'
                   }`}
                 />
@@ -293,81 +195,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 <span
                   className={`text-[10px] font-mono uppercase ${
-                    extensionLinked ? 'text-emerald-400' : 'text-[#5E6573]'
+                    extensionLinked ? 'text-emerald-400 font-semibold' : 'text-[#5E6573]'
                   }`}
                 >
                   {extensionLinked ? 'Ready' : 'Idle'}
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* Procedural Soundscape Dock */}
-          <div className="p-3 rounded-xl bg-[#11131A] border border-white/[0.07] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-[#8B7CFF]" />
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#8E95A5] font-semibold">
-                  AMBIENT SOUND
-                </span>
-              </div>
-              {activeSoundscape !== 'off' ? (
-                <div className="flex items-end gap-[2px] h-3">
-                  <span className="w-0.5 bg-[#8B7CFF] rounded-full wave-bar-1" />
-                  <span className="w-0.5 bg-[#8B7CFF] rounded-full wave-bar-2" />
-                  <span className="w-0.5 bg-[#8B7CFF] rounded-full wave-bar-3" />
-                  <span className="w-0.5 bg-[#8B7CFF] rounded-full wave-bar-4" />
-                </div>
-              ) : (
-                <span className="text-[9px] font-mono uppercase text-[#5E6573]">OFF</span>
-              )}
-            </div>
-
-            {/* Presets pills */}
-            <div className="grid grid-cols-3 gap-1">
-              {(
-                [
-                  { id: 'rain', label: 'Rain' },
-                  { id: 'fireplace', label: 'Fire' },
-                  { id: 'lofi', label: 'Lofi' },
-                  { id: 'brown-noise', label: 'Brown' },
-                  { id: 'forest', label: 'Wind' },
-                  { id: 'off', label: 'Mute' },
-                ] as const
-              ).map((preset) => {
-                const isSelected = activeSoundscape === preset.id;
-                return (
-                  <button
-                    key={preset.id}
-                    onClick={() => handleSoundToggle(preset.id)}
-                    className={`py-1 px-1.5 rounded text-[10px] font-medium transition-all text-center ${
-                      isSelected
-                        ? 'bg-[#8B7CFF] text-[#08090D] font-bold shadow-sm'
-                        : 'bg-white/[0.03] text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.07]'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Volume slider */}
-            {activeSoundscape !== 'off' && (
-              <div className="flex items-center gap-2 pt-1">
-                <VolumeX className="w-3 h-3 text-[#5E6573]" />
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={soundVolume}
-                  onChange={handleVolumeChange}
-                  className="w-full accent-[#8B7CFF] h-1 bg-white/10 rounded cursor-pointer"
-                />
-                <Volume2 className="w-3 h-3 text-[#8B7CFF]" />
-              </div>
-            )}
           </div>
         </div>
 
@@ -399,10 +233,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
 
               <button
-                onClick={() => {
-                  zenAudio.playHapticClick(400);
-                  onSignOut();
-                }}
+                onClick={onSignOut}
                 title="Sign out"
                 className="p-1.5 rounded-lg text-[#8E95A5] hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
               >
@@ -411,10 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           ) : (
             <button
-              onClick={() => {
-                zenAudio.playHapticClick(700);
-                onOpenYouTubeSync();
-              }}
+              onClick={onOpenYouTubeSync}
               className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[#171A23] hover:bg-[#1E222E] border border-white/[0.08] text-xs font-semibold text-[#F4F5FA] transition-all"
             >
               <GoogleIcon className="w-4 h-4" />

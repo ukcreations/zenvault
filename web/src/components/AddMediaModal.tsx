@@ -11,10 +11,9 @@ import {
   Loader2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import type { VideoItem, MoodType } from '../types';
+import type { VideoItem } from '../types';
 import { extractPlatformAndId, fetchMetadataForUrl } from '../lib/youtubeApi';
 import { parseInstagramExport } from '../lib/storage';
-import { zenAudio } from '../lib/audioSynthesizer';
 import { useToast } from './Toast';
 
 interface AddMediaModalProps {
@@ -38,7 +37,6 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
   const [title, setTitle] = useState('');
   const [channel, setChannel] = useState('');
   const [thumbnail, setThumbnail] = useState('');
-  const [mood, setMood] = useState<MoodType>('chill');
   const [notes, setNotes] = useState('');
   const [isFetchingMeta, setIsFetchingMeta] = useState(false);
 
@@ -76,7 +74,6 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
       platform: platform,
       channel: channel.trim() || undefined,
       thumbnail: thumbnail.trim() || undefined,
-      mood: mood,
       notes: notes.trim() || undefined,
       addedAt: new Date().toISOString(),
       isLiked: true,
@@ -85,7 +82,6 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
 
     onAddVideo(newVideo);
     confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
-    zenAudio.playHapticClick(880, 0.08);
     success('Video added to vault', newVideo.title);
 
     setUrl('');
@@ -116,7 +112,6 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
         onBulkAdd(items);
         setJsonSuccessCount(items.length);
         confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
-        zenAudio.playHapticClick(800, 0.1);
         success('Instagram backup imported', `${items.length} clips added to vault.`);
       } catch (err: any) {
         const errMsg = err.message || 'Error parsing file.';
@@ -147,10 +142,7 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
           </div>
 
           <button
-            onClick={() => {
-              zenAudio.playHapticClick();
-              onClose();
-            }}
+            onClick={onClose}
             className="p-1.5 rounded-lg text-[#8E95A5] hover:text-[#F4F5FA] hover:bg-white/[0.05] transition-colors"
           >
             <X className="w-4 h-4" />
@@ -161,10 +153,7 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
         <div className="px-6 pt-4 pb-2 border-b border-white/[0.06] bg-[#11131A]">
           <div className="flex items-center p-1 rounded-xl bg-[#171A23] border border-white/[0.06]">
             <button
-              onClick={() => {
-                zenAudio.playHapticClick(600, 0.02);
-                setActiveTab('url');
-              }}
+              onClick={() => setActiveTab('url')}
               className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'url'
                   ? 'bg-[#1E222E] text-[#F4F5FA] shadow-sm'
@@ -176,10 +165,7 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
             </button>
 
             <button
-              onClick={() => {
-                zenAudio.playHapticClick(600, 0.02);
-                setActiveTab('json');
-              }}
+              onClick={() => setActiveTab('json')}
               className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'json'
                   ? 'bg-[#1E222E] text-[#F4F5FA] shadow-sm'
@@ -191,10 +177,7 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
             </button>
 
             <button
-              onClick={() => {
-                zenAudio.playHapticClick(600, 0.02);
-                setActiveTab('extension');
-              }}
+              onClick={() => setActiveTab('extension')}
               className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === 'extension'
                   ? 'bg-[#1E222E] text-[#F4F5FA] shadow-sm'
@@ -257,40 +240,9 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
                     type="text"
                     value={channel}
                     onChange={(e) => setChannel(e.target.value)}
-                    placeholder="e.g. Veritasium, Lofi Girl"
+                    placeholder="e.g. Veritasium, Kurzgesagt"
                     className="w-full px-3.5 py-2 rounded-xl bg-[#171A23] border border-white/[0.08] text-xs text-[#F4F5FA] placeholder-[#5E6573] focus:outline-none focus:border-[#8B7CFF]/60"
                   />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#8E95A5] mb-1.5">
-                  Mood & Intent
-                </label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {(
-                    [
-                      { id: 'chill', label: 'Chill & Calm' },
-                      { id: 'deep-focus', label: 'Deep Focus' },
-                      { id: 'sleep', label: 'Sleep & Night' },
-                      { id: 'learn', label: 'Learn & Wisdom' },
-                      { id: 'comedy', label: 'Laughs & Joy' },
-                      { id: 'inspiration', label: 'Inspiration' },
-                    ] as const
-                  ).map((m) => (
-                    <button
-                      type="button"
-                      key={m.id}
-                      onClick={() => setMood(m.id)}
-                      className={`py-1.5 px-2 rounded-lg text-[11px] font-medium transition-all ${
-                        mood === m.id
-                          ? 'bg-[#8B7CFF] text-[#08090D] font-bold shadow-sm'
-                          : 'bg-[#171A23] text-[#8E95A5] hover:text-[#F4F5FA]'
-                      }`}
-                    >
-                      {m.label}
-                    </button>
-                  ))}
                 </div>
               </div>
 

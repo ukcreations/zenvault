@@ -9,7 +9,7 @@ interface CloudVideoRow {
   platform: string;
   thumbnail: string | null;
   channel: string | null;
-  mood: string;
+  mood: string | null;
   added_at: string;
   is_liked: boolean;
   is_watch_later: boolean;
@@ -26,7 +26,7 @@ function toRow(userId: string, v: VideoItem): CloudVideoRow {
     platform: v.platform,
     thumbnail: v.thumbnail ?? null,
     channel: v.channel ?? null,
-    mood: v.mood,
+    mood: v.mood ?? null,
     added_at: v.addedAt,
     is_liked: Boolean(v.isLiked),
     is_watch_later: Boolean(v.isWatchLater),
