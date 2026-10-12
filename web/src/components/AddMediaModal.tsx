@@ -322,7 +322,7 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
               <div className="p-4 rounded-xl bg-[#171A23] border border-white/[0.07] space-y-2.5">
                 <div className="flex items-center gap-2 text-[#F4F5FA] font-bold">
                   <Radio className="w-4 h-4 text-emerald-400" />
-                  <span>ZenVault Chrome Extension Bridge</span>
+                  <span>ReWatch Everywhere Chrome Extension Bridge</span>
                 </div>
                 <p className="text-[11px] leading-relaxed">
                   Save Instagram Reels, YouTube videos, and any web video directly in 1 click while browsing.
@@ -334,7 +334,7 @@ export const AddMediaModal: React.FC<AddMediaModalProps> = ({
                   <li>Open <code className="text-[#F4F5FA]">chrome://extensions</code> in Chrome.</li>
                   <li>Enable <strong>Developer mode</strong>.</li>
                   <li>Click <strong>Load unpacked</strong> and select the directory above.</li>
-                  <li>A floating "⚡ Beam to ZenVault" button will appear on all reels!</li>
+                  <li>A floating "⚡ Beam to ReWatch Everywhere" button will appear on all reels!</li>
                 </ol>
               </div>
             </div>

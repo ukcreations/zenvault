@@ -250,7 +250,7 @@ export const YouTubeSyncModal: React.FC<YouTubeSyncModalProps> = ({
                   Connect Your Google Account
                 </h3>
                 <p className="mt-1 text-xs text-[#8E95A5] leading-relaxed">
-                  Sign in once to let ZenVault read your YouTube Liked Videos (`LL`) and private playlists. We never modify your account or store passwords.
+                  Sign in once to let ReWatch Everywhere read your YouTube Liked Videos (`LL`) and private playlists. We never modify your account or store passwords.
                 </p>
               </div>
 

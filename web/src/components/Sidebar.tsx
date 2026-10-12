@@ -96,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <div>
               <span className="font-bold text-sm tracking-tight text-[#F4F5FA] font-display">
-                ZENVAULT
+                REWATCH EVERYWHERE
               </span>
               <span className="block text-[10px] font-mono uppercase text-[#8E95A5] tracking-wider -mt-0.5">
                 MEDIA SANCTUARY

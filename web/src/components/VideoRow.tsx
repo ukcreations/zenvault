@@ -60,7 +60,7 @@ export const VideoRow: React.FC<VideoRowProps> = ({
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpen(false);
-    if (confirm(`Remove "${video.title}" from your ZenVault?`)) {
+    if (confirm(`Remove "${video.title}" from ReWatch Everywhere?`)) {
       onDelete(video.id);
       success('Video removed from sanctuary');
     }

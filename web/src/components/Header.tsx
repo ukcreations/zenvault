@@ -74,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-[#8E95A5] hidden sm:inline">ZenVault</span>
+          <span className="text-[#8E95A5] hidden sm:inline">ReWatch Everywhere</span>
           <span className="text-[#5E6573] hidden sm:inline">/</span>
           <span className="font-semibold text-[#F4F5FA] text-sm">
             {getViewTitle()}
